@@ -4,7 +4,7 @@ variable "ami_id" {
   type        = string
 }
 variable "environment" { 
-  default   =  "dev"
+  default   =  "prod"
 
 }
 variable "instance_type" {
