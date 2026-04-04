@@ -19,3 +19,8 @@ variable "instance_tags" {
         environment = "dev"
     }
 }
+
+variable "sg_name" {
+    type = string
+    default = "daws -allow-all"
+}
