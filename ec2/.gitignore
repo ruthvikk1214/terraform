@@ -1,0 +1,7 @@
+.terraform/
+*.tfstate
+<<<<<<< HEAD
+*.tfstate.backup
+=======
+*.tfstate.backup
+>>>>>>> f4cab4d (removed terraform cache and added gitignore)
