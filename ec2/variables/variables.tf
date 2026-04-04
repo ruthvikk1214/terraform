@@ -8,3 +8,14 @@ variable "instance_type" {
   default = "t3.micro"
   type    = string
 }
+
+
+variable "instance_tags" {
+    type = map(string)
+    default = {
+        Name = "variable-demo"
+        Project = "roboshop"
+        Terraform = "true"
+        environment = "dev"
+    }
+}
