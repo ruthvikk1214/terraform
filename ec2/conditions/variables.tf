@@ -3,7 +3,10 @@ variable "ami_id" {
   description = "RHEL9 image ID"
   type        = string
 }
+variable "environment" { 
+  default   =  "dev"
 
+}
 variable "instance_type" {
   default = "t3.micro"
   type    = string
