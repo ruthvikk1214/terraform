@@ -1,8 +1,7 @@
-resource "aws_route53_record" "example" {
-  zone_id = rk1214.in
-  count = 10
-  name    = "www.example.com"
+resource "aws_route53_record" "www" {
+  zone_id = var.zoneid
+  name    = "${var.instances[count.index]}.${var.domain_name}"
   type    = "A"
   ttl     = 1
-  records = var.instances[count.index]
+  records = [aws_instance.roboshop[count.index].private_ip]
 }
