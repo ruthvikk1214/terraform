@@ -4,7 +4,7 @@ resource "aws_instance" "example" {
   count = 10
   vpc_security_group_ids = [aws_security_group.allow_tls.id]
   tags = {
-    Name        = "terraform"
+    Name        = var.instances[count.index]
     Project     = "roboshop"
   }
 }
