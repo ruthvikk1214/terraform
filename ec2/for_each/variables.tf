@@ -13,6 +13,6 @@ variable "zoneid" {
 }
 
 variable "domain_name" {
-    type = string
-  default = rk1214.in
+  type    = string
+  default = "rk1214.in"
 }
