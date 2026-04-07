@@ -9,7 +9,7 @@ terraform {
     bucket         = "rk1214-remote-state"
     key            = "remote-state.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "terraform-lock-table" # Optional: for locking
+    ##dynamodb_table = "terraform-lock-table" # Optional: for locking
     encrypt        = true                   # Recommended
     use_lockfile = true
   }
