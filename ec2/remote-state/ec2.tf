@@ -6,9 +6,10 @@ resource "aws_instance" "example" {
     Name        = "terraform-remote-state"
     Project     = "roboshop"
   }
+
 }
 
-# resource "aws_security_group" "allow_tls" {
+/* # resource "aws_security_group" "allow_tls" {
 #   name        = "allow_tls"
 #   description = "Allow TLS inbound traffic and all outbound traffic"
 #  ## vpc_id      = aws_vpc.main.id
@@ -32,4 +33,4 @@ resource "aws_instance" "example" {
 #     cidr_blocks      = ["0.0.0.0/0"]
 #     ipv6_cidr_blocks = ["::/0"]
 #   }
-# }
+# } */
