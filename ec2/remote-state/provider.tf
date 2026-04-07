@@ -7,10 +7,11 @@ terraform {
   }
    backend "s3" {
     bucket         = "rk1214-remote-state"
-    key            = "network/terraform.tfstate"
+    key            = "remote-state.tfstate"
     region         = "us-east-1"
     dynamodb_table = "terraform-lock-table" # Optional: for locking
     encrypt        = true                   # Recommended
+    use_lockfile = true
   }
 }
 
