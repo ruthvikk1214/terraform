@@ -6,8 +6,22 @@ resource "aws_instance" "example" {
     Name        = "terraform-remote-state"
     Project     = "roboshop"
   }
+  provisioner "remote-exec" {
+    inline = [
+      "sudo yum update -y",
+      "sudo yum install -y nginx",
+      "sudo systemctl start nginx",
+      "sudo systemctl enable nginx"
+    ]
+  }
   provisioner "local-exec" {
-    command = "echo '${self.public_ip}' > inventory.txt"
+    command = "echo ${aws_instance.example.public_ip} > public_ip.txt"
+  } 
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    # #private_key = file("my-key.pem")
+    host        = self.public_ip
   }
 }
 
