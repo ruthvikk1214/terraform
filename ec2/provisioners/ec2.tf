@@ -10,19 +10,20 @@ resource "aws_instance" "example" {
     inline = [
       "sudo yum update -y",
       "sudo yum install -y nginx",
-      "sudo systemctl start nginx",
-      "sudo systemctl enable nginx"
+      "sudo yum install -y git",
+      "sudo yum install -y nodejs",
     ]
   }
   provisioner "local-exec" {
     command = "echo ${aws_instance.example.public_ip} > public_ip.txt"
   } 
   connection {
-    type        = "ssh"
-    user        = "ec2-user"
-    # #private_key = file("my-key.pem")
-    host        = self.public_ip
+    type     = "ssh"
+    user     = "ec2-user"
+    password = "DevOps321"
+    host     = self.public_ip
   }
+
 }
 
 
