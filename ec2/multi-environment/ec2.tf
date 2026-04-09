@@ -1,6 +1,6 @@
 resource "aws_instance" "example" {
   ami           = local.ami_id
-  instance_type = local.environment == "dev" ? var.instance_type.dev : local.environment == "uat" ? var.instance_type.uat : var.instance_type.prod
+  instance_type = lookup(var.instance_type, local.environment)
   vpc_security_group_ids = ["sg-0eec592803ede7730"]
   tags = {
     Name        = "terraform"
