@@ -1,9 +1,9 @@
 variable "ami_id" {
-  default = string
+  type = string
 }
 variable "instance_type" {
-  default = string
+  type = string
 }
 variable "sg_ids" {
-  default = list(string)
+  type = list(string)
 }
