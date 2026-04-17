@@ -9,3 +9,7 @@ variable "project" {
 variable "environment" {
   type = string
 }
+variable "igwy_tags" {
+  type = map
+  default = {}
+}
