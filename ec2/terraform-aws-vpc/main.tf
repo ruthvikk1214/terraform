@@ -7,16 +7,18 @@ resource "aws_vpc" "main" {
   })
 }
 
-resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
-  tags = {
-    Name = "main"
-  }
-}
-
-resource "aws_subnet" "main" {
-  vpc_id     = aws_vpc.main.id
-  tags = {
-    Name = "Main"
-  }
-}
+# # Internet gateway attached to the main VPC
+# resource "aws_internet_gateway" "main" {
+#   vpc_id = aws_vpc.main.id
+#   tags = {
+#     Name = "main"
+#   }
+# }
+#
+# # Subnet within the main VPC
+# resource "aws_subnet" "main" {
+#   vpc_id     = aws_vpc.main.id
+#   tags = {
+#     Name = "Main"
+#   }
+# }
