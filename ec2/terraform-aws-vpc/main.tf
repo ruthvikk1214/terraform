@@ -13,3 +13,11 @@ resource "aws_internet_gateway" "main" {
     Name = "main"
   }
 }
+resource "aws_subnet" "main" {
+  vpc_id     = aws_vpc.main.id
+  
+
+  tags = {
+    Name = "Main"
+  }
+}
