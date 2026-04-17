@@ -6,17 +6,16 @@ resource "aws_vpc" "main" {
     Name = "${var.project}-${var.environment}-vpc"
   })
 }
+
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
-
   tags = {
     Name = "main"
   }
 }
+
 resource "aws_subnet" "main" {
   vpc_id     = aws_vpc.main.id
-  
-
   tags = {
     Name = "Main"
   }
