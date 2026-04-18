@@ -11,7 +11,8 @@ resource "aws_vpc" "main" {
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
   tags = {
-    Name = "main"
+    Name = "${var.project}-${var.environment}-igwy"
+    
   }
 }
 
@@ -21,7 +22,7 @@ resource "aws_subnet" "public" {
   cidr_block = var.public_subnet_cidr
 
   tags = {
-    Name = "public-subnet"
+    Name = "public-subnet-${var.project}-${var.environment}"
   }
 }
 
@@ -30,6 +31,6 @@ resource "aws_subnet" "private" {
   cidr_block = var.private_subnet_cidr
 
   tags = {
-    Name = "private-subnet"
+    Name = "private-subnet-${var.project}-${var.environment}"
   }
 }

@@ -9,7 +9,14 @@ locals {
   })
 
   
-  # igwy_tags = merge(local.common_tags, {
-  #   Name = "${var.project}-${var.environment}-igwy"
-  # })
+   igwy_tags = merge(local.common_tags, {
+     Name = "${var.project}-${var.environment}-igwy"
+   })
+
+public_subnet_tags = merge(local.common_tags, {
+     Name = "${var.project}-${var.environment}-subnet-public"
+   })
+private_subnet_tags = merge(local.common_tags, {
+     Name = "${var.project}-${var.environment}-subnet-private"
+   }) 
 }
