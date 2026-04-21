@@ -18,25 +18,21 @@ resource "aws_internet_gateway" "main" {
 
 # Subnet within the main VPC
 resource "aws_subnet" "public" {
-  vpc_id     = aws_vpc.main.id
-    count = length(var.public_subnet_cidr)
+  count = length(var.public_subnet_cidrs)
 
-  cidr_block = var.public_subnet_cidr
-  availability_zone       = var.availability_zones[count.index]
+  vpc_id     = aws_vpc.main.id
+  cidr_block = var.public_subnet_cidrs[count.index]
+  availability_zone = var.availability_zones[count.index]
+
   map_public_ip_on_launch = true
-  tags = {
-    Name = "public-subnet-${var.project}-${var.environment}"
-  }
 }
 
 resource "aws_subnet" "private" {
-  vpc_id     = aws_vpc.main.id
-    count = length(var.private_subnet_cidr)
+  count = length(var.private_subnet_cidrs)
 
-  cidr_block = var.private_subnet_cidr
+  vpc_id     = aws_vpc.main.id
+  cidr_block = var.private_subnet_cidrs[count.index]
   availability_zone = var.availability_zones[count.index]
-  map_public_ip_on_launch = true
-  tags = {
-    Name = "private-subnet-${var.project}-${var.environment}"
-  }
+
+  map_public_ip_on_launch = false
 }
