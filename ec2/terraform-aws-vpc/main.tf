@@ -12,7 +12,7 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
   tags = {
     Name = "${var.project}-${var.environment}-igwy"
-    
+    map_public_ip_on_launch = true
   }
 }
 
@@ -20,7 +20,7 @@ resource "aws_subnet" "main" {
   vpc_id     = aws_vpc.main.id
   count = length(var.public_subnet_cidrs)
   cidr_block = var.public_subnet_cidrs[count.index]
-
+map_public_ip_on_launch = true
   tags = {
     Name = "Main"
   }
