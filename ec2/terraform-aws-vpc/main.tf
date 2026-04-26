@@ -47,7 +47,7 @@ resource "aws_route_table" "public" {
 
   route {
     cidr_block = "10.0.1.0/24"
-    #gateway_id = aws_internet_gateway.igwy
+    gateway_id = aws_internet_gateway.igwy.id
   }
 
   /*route {
@@ -64,24 +64,25 @@ resource "aws_route_table" "private" {
 
  route {
     cidr_block = "10.0.2.0/24"
-     /*gateway_id = aws_internet_gateway.igwy
-  }*/
+     gateway_id = aws_internet_gateway.igwy.id
+  }
 
  /* route {
     ipv6_cidr_block        = "::/0"
     egress_only_gateway_id = aws_egress_only_internet_gateway.example.id
   }*/
- }
   tags = merge(local.common_tags, {
     Name = "${var.project}-${var.environment}-private-route-table"
   })          
-}
+
+ }
+ 
 resource "aws_route_table" "database" {
   vpc_id = aws_vpc.main.id
 
   route {
     cidr_block = "10.0.3.0/24"
-    #gateway_id = aws_internet_gateway.igwy
+    gateway_id = aws_internet_gateway.igwy.id
   }
 
   /*route {
