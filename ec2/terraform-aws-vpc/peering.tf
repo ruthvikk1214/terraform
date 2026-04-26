@@ -1,4 +1,4 @@
-resource "aws_vpc_peering_connection" "foo" {
+resource "aws_vpc_peering_connection" "peering" {
   count = var.is_peering_needed ? 1 : 0
   #peer_owner_id = var.peer_owner_id
   peer_vpc_id   = data.aws_vpc.default_vpc_id.id
@@ -7,12 +7,25 @@ resource "aws_vpc_peering_connection" "foo" {
   accepter {
     allow_remote_vpc_dns_resolution = true
   }
-
   requester {
     allow_remote_vpc_dns_resolution = true
   }
-
   tags = merge(local.common_tags, {
     Name = "${var.project}-${var.environment}-vpc-peering"
   })
+}
+
+resource "aws_route" "public-peering" {
+  count = var.is_peering_needed ? 1 : 0
+  route_table_id         = aws_route_table.public.id
+  destination_cidr_block = data.aws_vpc.default_vpc_id.cidr_block
+  vpc_peering_connection_id = aws_vpc_peering_connection.peering.id
+}
+
+
+resource "aws_route" "default_peering" {
+  count = var.is_peering_needed ? 1 : 0
+  route_table_id         = data.aws_vpc.default_vpc_id.main_route_table_id
+  destination_cidr_block = var.vpc_cidr
+  vpc_peering_connection_id = aws_vpc_peering_connection.peering.id
 }
