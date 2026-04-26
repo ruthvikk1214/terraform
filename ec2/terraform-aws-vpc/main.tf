@@ -51,10 +51,10 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.main
   }
 
-  route {
+  /*route {
     ipv6_cidr_block        = "::/0"
     egress_only_gateway_id = aws_egress_only_internet_gateway.example.id
-  }
+  }*/
 
   tags = {
     Name = "public-route-table"
@@ -63,15 +63,15 @@ resource "aws_route_table" "public" {
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
-  route {
+  /*route {
     cidr_block = "10.0.3.0/24"
     gateway_id = aws_internet_gateway.main
-  }
+  }*/
 
-  route {
+ /* route {
     ipv6_cidr_block        = "::/0"
     egress_only_gateway_id = aws_egress_only_internet_gateway.example.id
-  }
+  }*/
 
   tags = {
     Name = "private-route-table"
@@ -80,7 +80,7 @@ resource "aws_route_table" "private" {
 resource "aws_route_table" "database" {
   vpc_id = aws_vpc.main.id
 
-  route {
+  /*route {
     cidr_block = "10.0.5.0/24"
     gateway_id = aws_internet_gateway.main
   }
@@ -88,7 +88,7 @@ resource "aws_route_table" "database" {
   route {
     ipv6_cidr_block        = "::/0"
     egress_only_gateway_id = aws_egress_only_internet_gateway.example.id
-  }
+  }*/
 
   tags = {
     Name = "database-route-table"
