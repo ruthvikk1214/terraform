@@ -41,3 +41,7 @@ variable "database_route_table_tags" {
   type = map(string)
   default = {}
 }
+variable "is_peering_needed" {
+  default = false
+  type = bool
+}
