@@ -19,4 +19,8 @@ public_subnet_tags = merge(local.common_tags, {
 private_subnet_tags = merge(local.common_tags, {
      Name = "${var.project}-${var.environment}-subnet-private"
    }) 
+
+database_subnet_tags = merge(local.common_tags, {
+     Name = "${var.project}-${var.environment}-subnet-database"
+   })
 }

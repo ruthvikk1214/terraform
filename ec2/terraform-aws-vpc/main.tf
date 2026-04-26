@@ -20,7 +20,7 @@ resource "aws_subnet" "public" {
   vpc_id     = aws_vpc.main.id
   count = length(var.public_subnet_cidrs)
   cidr_block = var.public_subnet_cidrs[count.index]
-map_public_ip_on_launch = true
+  map_public_ip_on_launch = true
   tags = {
     Name = "Main"
   }
@@ -29,7 +29,16 @@ resource "aws_subnet" "private" {
   vpc_id     = aws_vpc.main.id
   count = length(var.private_subnet_cidrs)
   cidr_block = var.private_subnet_cidrs[count.index]
-map_public_ip_on_launch = false
+  map_public_ip_on_launch = false
+  tags = {
+    Name = "Main"
+  }
+}
+resource "aws_subnet" "database" {
+  vpc_id     = aws_vpc.main.id
+  count = length(var.database_subnet_cidrs)
+  cidr_block = var.database_subnet_cidrs[count.index]
+  map_public_ip_on_launch = false
   tags = {
     Name = "Main"
   }
