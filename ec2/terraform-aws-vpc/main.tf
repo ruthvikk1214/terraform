@@ -10,10 +10,9 @@ resource "aws_vpc" "main" {
 # Internet gateway attached to the main VPC
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
-  tags = {
+   tags = merge(local.common_tags, {
     Name = "${var.project}-${var.environment}-igwy"
-    map_public_ip_on_launch = true
-  }
+  })
 }
 
 resource "aws_subnet" "public" {
@@ -21,27 +20,27 @@ resource "aws_subnet" "public" {
   count = length(var.public_subnet_cidrs)
   cidr_block = var.public_subnet_cidrs[count.index]
   map_public_ip_on_launch = true
-  tags = {
-    Name = "public-subnet"
-  }
+  tags = merge(local.common_tags, {
+    Name = "${var.project}-${var.environment}-public-subnet"
+  })
 }
 resource "aws_subnet" "private" {
   vpc_id     = aws_vpc.main.id
   count = length(var.private_subnet_cidrs)
   cidr_block = var.private_subnet_cidrs[count.index]
   map_public_ip_on_launch = false
-  tags = {
-    Name = "private-subnet"
-  }
+  tags = merge(local.common_tags, {
+    Name = "${var.project}-${var.environment}-private-subnet"
+  })
 }
 resource "aws_subnet" "database" {
   vpc_id     = aws_vpc.main.id
   count = length(var.database_subnet_cidrs)
   cidr_block = var.database_subnet_cidrs[count.index]
   map_public_ip_on_launch = false
-  tags = {
-    Name = "database-subnet"
-  }
+  tags = merge(local.common_tags, {
+    Name = "${var.project}-${var.environment}-database-subnet"
+  })
 }
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
@@ -56,41 +55,41 @@ resource "aws_route_table" "public" {
     egress_only_gateway_id = aws_egress_only_internet_gateway.example.id
   }*/
 
-  tags = {
-    Name = "public-route-table"
-  }
+  tags = merge(local.common_tags, {
+    Name = "${var.project}-${var.environment}-public-route-table"
+  })
 }
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
-  /*route {
-    cidr_block = "10.0.3.0/24"
-    gateway_id = aws_internet_gateway.main
+ route {
+    cidr_block = "10.0.2.0/24"
+     /*gateway_id = aws_internet_gateway.main
   }*/
 
  /* route {
     ipv6_cidr_block        = "::/0"
     egress_only_gateway_id = aws_egress_only_internet_gateway.example.id
   }*/
-
-  tags = {
-    Name = "private-route-table"
-  }
+ }
+  tags = merge(local.common_tags, {
+    Name = "${var.project}-${var.environment}-private-route-table"
+  })          
 }
 resource "aws_route_table" "database" {
   vpc_id = aws_vpc.main.id
 
-  /*route {
-    cidr_block = "10.0.5.0/24"
-    gateway_id = aws_internet_gateway.main
+  route {
+    cidr_block = "10.0.3.0/24"
+    
   }
 
-  route {
+  /*route {
     ipv6_cidr_block        = "::/0"
     egress_only_gateway_id = aws_egress_only_internet_gateway.example.id
   }*/
 
-  tags = {
-    Name = "database-route-table"
-  }
+  tags = merge(local.common_tags, {
+    Name = "${var.project}-${var.environment}-database-route-table"
+  })  
 }
