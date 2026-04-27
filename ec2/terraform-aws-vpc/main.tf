@@ -20,26 +20,29 @@ resource "aws_subnet" "public" {
   count = length(var.public_subnet_cidrs)
   cidr_block = var.public_subnet_cidrs[count.index]
   map_public_ip_on_launch = true
+  availability_zone = var.availability_zones[count.index]
   tags = merge(local.common_tags, {
-    Name = "${var.project}-${var.environment}-public-subnet"
+    Name = "${var.project}-${var.environment}-public-subnet-${count.index + 1}"
   })
 }
 resource "aws_subnet" "private" {
   vpc_id     = aws_vpc.main.id
   count = length(var.private_subnet_cidrs)
   cidr_block = var.private_subnet_cidrs[count.index]
+  availability_zone = var.availability_zones[count.index]
   map_public_ip_on_launch = false
   tags = merge(local.common_tags, {
-    Name = "${var.project}-${var.environment}-private-subnet"
+    Name = "${var.project}-${var.environment}-private-subnet-${count.index + 1}"
   })
 }
 resource "aws_subnet" "database" {
   vpc_id     = aws_vpc.main.id
   count = length(var.database_subnet_cidrs)
+  availability_zone = var.availability_zones[count.index]
   cidr_block = var.database_subnet_cidrs[count.index]
   map_public_ip_on_launch = false
   tags = merge(local.common_tags, {
-    Name = "${var.project}-${var.environment}-database-subnet"
+    Name = "${var.project}-${var.environment}-database-subnet-${count.index + 1}"
   })
 }
 resource "aws_route_table" "public" {
