@@ -22,10 +22,23 @@ resource "aws_route" "public-peering" {
   vpc_peering_connection_id = aws_vpc_peering_connection.peering[count.index].id
 }
 
+resource "aws_route" "private-peering" {
+  count                     = var.is_peering_needed ? 1 : 0
+  route_table_id            = aws_route_table.private.id
+  destination_cidr_block    = data.aws_vpc.default_vpc_id.cidr_block
+  vpc_peering_connection_id = aws_vpc_peering_connection.peering[count.index].id
+}
 
 resource "aws_route" "default_peering" {
   count = var.is_peering_needed ? 1 : 0
   route_table_id         = data.aws_vpc.default_vpc_id.main_route_table_id
   destination_cidr_block = var.vpc_cidr
   vpc_peering_connection_id = aws_vpc_peering_connection.peering[count.index].id
+}
+
+resource "aws_route" "database_peering" {
+  count = var.is_peering_needed ? 1 : 0
+  route_table_id            = aws_route_table.database.id
+  destination_cidr_block    = data.aws_vpc.default.cidr_block
+  vpc_peering_connection_id  = aws_vpc_peering_connection.default[count.index].id
 }
