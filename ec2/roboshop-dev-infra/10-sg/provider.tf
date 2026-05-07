@@ -6,11 +6,11 @@ terraform {
     }
   }
   backend "s3" {
-    bucket         = "remote-state-roboshop-dev-rk1214"
-    key            = "roboshop-dev-sg"
-    region         = "us-east-1"
+    bucket = "remote-state-roboshop-dev-rk1214"
+    key    = "roboshop-dev-sg"
+    region = "us-east-1"
     ##dynamodb_table = "terraform-lock-table" # Optional: for locking
-    encrypt        = true                   # Recommended
+    encrypt      = true # Recommended
     use_lockfile = true
   }
 }
