@@ -1,3 +1,3 @@
-output "vpc_id" {
-  value = var.vpc_id
+output "sg_id" {
+  value = var.sg_id
 }
