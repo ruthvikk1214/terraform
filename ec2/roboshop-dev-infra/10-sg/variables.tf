@@ -5,19 +5,21 @@ variable "environment" {
   default = "dev"
 }
 variable "sg_names" {
-  type = list(
-    #databases
-    "mongod", "redis", "mysql","rabbitmq",
-    #backend  
-    "cart", "catalogue", "user", "shipping", "payment",
-    #frontend
-    "frontend",
-    #backendalb,
-    "backend_alb",
-    #frontendalb,
-    "frontend_alb",
-    #bastion
-    "bastion"
+  type = list(string)
 
-      )
+  default = [
+    "mongod",
+    "redis",
+    "mysql",
+    "rabbitmq",
+    "cart",
+    "catalogue",
+    "user",
+    "shipping",
+    "payment",
+    "frontend",
+    "backend_alb",
+    "frontend_alb",
+    "bastion"
+  ]
 }
