@@ -1,10 +1,8 @@
-# /* output "sg_id" {
-#   description = "Security group ID from the SG module"
-#   value       = module.sg.sg_id
-# }
+output "sg_ids" {
+  description = "Security Group IDs mapped by SG name"
 
-# output "mongodb_sg_id" {
-#   description = "MongoDB SG ID"
-#   value       = module.sg.sg_id
-# }
-#  */
+  value = {
+    for idx, sg in module.sg :
+    var.sg_names[idx] => sg.sg_id
+  }
+}
