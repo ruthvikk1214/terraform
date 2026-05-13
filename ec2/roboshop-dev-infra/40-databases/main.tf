@@ -49,3 +49,21 @@ resource "aws_instance" "mysql" {
         local.common_tags
     )
     }
+
+resource "terraform_data" "bootstrap" {
+  triggers_replace = [
+    aws_instance.mongodb.id,
+  ]
+
+connection {
+      type        = "ssh"
+      host        = aws_instance.mongodb.private_ip
+      user        = "ec2-user"
+      password = "DevOps321"
+  }
+
+  provisioner "remote-exec" {
+    
+      
+  }
+}
