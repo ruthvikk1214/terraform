@@ -10,6 +10,13 @@
         },
         local.common_tags
     )
+provisioner "remote-exec" {
+    inline = [
+      "sudo yum install -y yum-utils",
+      "sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo",
+      "sudo yum -y install terraform"
+    ]
+  }
     }
 
     resource "aws_iam_role" "bastion" {
