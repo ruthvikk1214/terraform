@@ -8,7 +8,7 @@ variable "sg_names" {
   type = list(string)
 
   default = [
-    "mongod",
+    "mongodb",
     "redis",
     "mysql",
     "rabbitmq",
