@@ -53,6 +53,11 @@ resource "aws_iam_role_policy_attachment" "bastion" {
   role       = aws_iam_role.bastion.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
 }
+# Grant SSM Read Access so Terraform can fetch IDs
+resource "aws_iam_role_policy_attachment" "bastion_ssm" {
+  role       = aws_iam_role.bastion.name
+  policy_arn = "arn:aws:policy/AmazonSSMReadOnlyAccess"
+}
 resource "aws_iam_role_policy_attachment" "bastion_s3" {
   role       = aws_iam_role.bastion.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess" 
