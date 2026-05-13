@@ -1,4 +1,4 @@
-    resource "aws_instance" "example" {
+    resource "aws_instance" "bastion" {
     ami           =   local.ami_id
     instance_type = "t3.micro"
     subnet_id = local.public_subnet_ids
@@ -14,8 +14,15 @@ provisioner "remote-exec" {
     inline = [
       "sudo yum install -y yum-utils",
       "sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo",
-      "sudo yum -y install terraform"
+      "sudo yum -y install terraform", 
+      "sudo dnf install ansible -y "
     ]
+    connection {
+      type        = "ssh"
+      host        = aws_instance.bastion.public_ip
+      user        = "ec2-user"
+      password = "DevOps321"
+  }
   }
     }
 
@@ -45,6 +52,10 @@ provisioner "remote-exec" {
 resource "aws_iam_role_policy_attachment" "bastion" {
   role       = aws_iam_role.bastion.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
+}
+resource "aws_iam_role_policy_attachment" "bastion_s3" {
+  role       = aws_iam_role.bastion.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess" 
 }
 resource "aws_iam_instance_profile" "bastion" {
   name = "${var.project}-${var.environment}-bastion"
