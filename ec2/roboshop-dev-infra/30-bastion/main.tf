@@ -2,28 +2,41 @@
     ami           =   local.ami_id
     instance_type = "t3.micro"
     subnet_id = local.public_subnet_ids
+    user_data = file("bastion.sh")
     vpc_security_group_ids = [local.bastion_sg_id]
     iam_instance_profile = aws_iam_instance_profile.bastion.name
+    
+    
+    root_block_device {
+      volume_size = 50
+      volume_type = "gp3"
+      tags = merge(
+        {
+            Name = "${var.project}-${var.environment}-diskaddition"
+        },
+        local.common_tags
+    )
+    }
     tags = merge(
         {
             Name = "${var.project}-${var.environment}-bastion"
         },
         local.common_tags
     )
-provisioner "remote-exec" {
-    inline = [
-      "sudo yum install -y yum-utils",
-      "sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo",
-      "sudo yum -y install terraform", 
-      "sudo dnf install ansible -y "
-    ]
-    connection {
-      type        = "ssh"
-      host        = aws_instance.bastion.public_ip
-      user        = "ec2-user"
-      password = "DevOps321"
-  }
-  }
+# provisioner "remote-exec" {
+#     inline = [
+#       "sudo yum install -y yum-utils",
+#       "sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo",
+#       "sudo yum -y install terraform", 
+#       "sudo dnf install ansible -y "
+#     ]
+#     connection {
+#       type        = "ssh"
+#       host        = aws_instance.bastion.public_ip
+#       user        = "ec2-user"
+#       password = "DevOps321"
+#   }
+#   }
     }
 
     resource "aws_iam_role" "bastion" {
@@ -56,7 +69,7 @@ resource "aws_iam_role_policy_attachment" "bastion" {
 # Grant SSM Read Access so Terraform can fetch IDs
 resource "aws_iam_role_policy_attachment" "bastion_ssm" {
   role       = aws_iam_role.bastion.name
-  policy_arn = "arn:aws:policy/AmazonSSMReadOnlyAccess"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
 }
 resource "aws_iam_role_policy_attachment" "bastion_s3" {
   role       = aws_iam_role.bastion.name
