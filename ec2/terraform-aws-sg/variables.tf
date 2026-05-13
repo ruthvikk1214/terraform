@@ -21,3 +21,22 @@ variable "sg_tags" {
   type = map
   default = {}
 }
+variable "sg_names" {
+  type = list(string)
+
+  default = [
+    "mongodb",
+    "redis",
+    "mysql",
+    "rabbitmq",
+    "cart",
+    "catalogue",
+    "user",
+    "shipping",
+    "payment",
+    "frontend",
+    "backend_alb",
+    "frontend_alb",
+    "bastion"
+  ]
+}

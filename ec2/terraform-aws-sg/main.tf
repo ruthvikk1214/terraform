@@ -1,4 +1,5 @@
 resource "aws_security_group" "main" {
+  for_each    = toset(var.sg_names)
   name        = "${var.sg_name}-${var.project}-${var.environment}"
   description = "Allow TLS inbound traffic for ${var.project} in ${var.environment} for ${var.sg_name}"
   vpc_id      = var.vpc_id
