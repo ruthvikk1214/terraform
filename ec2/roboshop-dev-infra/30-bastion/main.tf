@@ -2,7 +2,7 @@
     ami           =   local.ami_id
     instance_type = "t3.micro"
     subnet_id = local.public_subnet_ids
-    user_data = file("bastion.sh")
+     user_data = file("bastion.sh")
     vpc_security_group_ids = [local.bastion_sg_id]
     iam_instance_profile = aws_iam_instance_profile.bastion.name
     
@@ -23,20 +23,20 @@
         },
         local.common_tags
     )
-# provisioner "remote-exec" {
-#     inline = [
-#       "sudo yum install -y yum-utils",
-#       "sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo",
-#       "sudo yum -y install terraform", 
-#       "sudo dnf install ansible -y "
-#     ]
-#     connection {
-#       type        = "ssh"
-#       host        = aws_instance.bastion.public_ip
-#       user        = "ec2-user"
-#       password = "DevOps321"
-#   }
-#   }
+provisioner "remote-exec" {
+    inline = [
+      "sudo yum install -y yum-utils",
+      "sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo",
+      "sudo yum -y install terraform", 
+      "sudo dnf install ansible -y "
+    ]
+    connection {
+      type        = "ssh"
+      host        = aws_instance.bastion.public_ip
+      user        = "ec2-user"
+      password = "DevOps321"
+  }
+  }
     }
 
     resource "aws_iam_role" "bastion" {
