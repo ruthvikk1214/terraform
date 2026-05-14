@@ -8,7 +8,7 @@ resource "aws_security_group_rule" "bastion_internet" { #bastion accepting conne
   security_group_id = local.bastion_sg_id
 }
 
-resource "aws_security_group_rule" "mongob_bastion" {#mongo accepting connection from bastion
+resource "aws_security_group_rule" "mongod_bastion" {#mongo accepting connection from bastion
   type              = "ingress"
   from_port         = 22
   to_port           = 22
