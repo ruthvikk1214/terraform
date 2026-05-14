@@ -24,11 +24,52 @@ resource "aws_security_group_rule" "mongodb_catalogue" {#mongo accepting connect
   source_security_group_id = local.catalogue_sg_id
   security_group_id = local.mongodb_sg_id
 }
-resource "aws_security_group_rule" "redis_bastion" {#mongo accepting connection from catalogue
+resource "aws_security_group_rule" "redis_bastion" {#redis accepting connection from bastion
   type              = "ingress"
-  from_port         = 27017
-  to_port           = 27017
+  from_port         = 6379
+  to_port           = 6379
   protocol          = "tcp"
   source_security_group_id = local.bastion_sg_id
   security_group_id = local.redis_sg_id
+}
+resource "aws_security_group_rule" "redis_user" {#mongo accepting connection from bastion
+  type              = "ingress"
+  from_port         = 6379
+  to_port           = 6379
+  protocol          = "tcp"
+  source_security_group_id = local.user_sg_id
+  security_group_id = local.redis_sg_id
+}
+resource "aws_security_group_rule" "redis_cart" {#redis accepting connection from cart
+  type              = "ingress"
+  from_port         = 6379
+  to_port           = 6379
+  protocol          = "tcp"
+  source_security_group_id = local.cart_sg_id
+  security_group_id = local.redis_sg_id
+}
+resource "aws_security_group_rule" "redis_catalogue" {#redis accepting connection from cart
+  type              = "ingress"
+  from_port         = 6379
+  to_port           = 6379
+  protocol          = "tcp"
+  source_security_group_id = local.catalogue_sg_id
+  security_group_id = local.redis_sg_id
+}
+resource "aws_security_group_rule" "mysql_shipping" {#redis accepting connection from cart
+  type              = "ingress"
+  from_port         = 3306
+  to_port           = 3306
+  protocol          = "tcp"
+  source_security_group_id = local.shipping_sg_id
+  security_group_id = local.mysql_sg_id
+}
+
+resource "aws_security_group_rule" "rabbitmq_payment" {
+  type                     = "ingress"
+  from_port                = 5672
+  to_port                  = 5672
+  protocol                 = "tcp"
+  source_security_group_id = local.payment_sg_id
+  security_group_id        = local.rabbitmq_sg_id
 }
