@@ -2,12 +2,12 @@
 set -xe
 
 # Install Terraform
-yum install -y yum-utils
-yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
-yum install -y terraform
+dnf install -y yum-utils
+dnf-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+dnf install -y terraform
 
 # Install Ansible
-yum install -y ansible
+dnf install -y ansible
 
 # Verify
 terraform version > /tmp/terraform_version.txt
