@@ -75,29 +75,29 @@ provisioner "file" {
 }
 
 
-# resource "aws_instance" "rabbitmq" {
-#     ami           =   local.ami_id
-#     instance_type = "t3.micro"
-#     subnet_id = local.database_subnet_ids
-#     vpc_security_group_ids = [local.rabbitmq_sg_id]
-#     tags = merge(
-#         {
-#             Name = "${var.project}-${var.environment}-rabbitmq"
-#         },
-#         local.common_tags
-#     )
-#     }
+resource "aws_instance" "rabbitmq" {
+    ami           =   local.ami_id
+    instance_type = "t3.micro"
+    subnet_id = local.database_subnet_ids
+    vpc_security_group_ids = [local.rabbitmq_sg_id]
+    tags = merge(
+        {
+            Name = "${var.project}-${var.environment}-rabbitmq"
+        },
+        local.common_tags
+    )
+    }
 
-# resource "aws_instance" "mysql" {
-#     ami           =   local.ami_id
-#     instance_type = "t3.micro"
-#     subnet_id = local.database_subnet_ids
-#     vpc_security_group_ids = [local.mysql_sg_id]
-#     tags = merge(
-#         {
-#             Name = "${var.project}-${var.environment}-mysql"
-#         },
-#         local.common_tags
-#     )
-#     }
+resource "aws_instance" "mysql" {
+    ami           =   local.ami_id
+    instance_type = "t3.micro"
+    subnet_id = local.database_subnet_ids
+    vpc_security_group_ids = [local.mysql_sg_id]
+    tags = merge(
+        {
+            Name = "${var.project}-${var.environment}-mysql"
+        },
+        local.common_tags
+    )
+    }
 
