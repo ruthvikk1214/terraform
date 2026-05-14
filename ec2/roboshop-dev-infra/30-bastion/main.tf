@@ -23,20 +23,20 @@
         },
         local.common_tags
     )
-provisioner "remote-exec" {
-    inline = [
-      "sudo yum install -y yum-utils",
-      "sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo",
-      "sudo yum -y install terraform", 
-      "sudo dnf install ansible -y "
-    ]
-    connection {
-      type        = "ssh"
-      host        = aws_instance.bastion.public_ip
-      user        = "ec2-user"
-      password = "DevOps321"
-  }
-  }
+# provisioner "remote-exec" {
+#     inline = [
+#       "sudo yum install -y yum-utils",
+#       "sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo",
+#       "sudo yum -y install terraform", 
+#       "sudo dnf install ansible -y "
+#     ]
+#     connection {
+#       type        = "ssh"
+#       host        = aws_instance.bastion.public_ip
+#       user        = "ec2-user"
+#       password = "DevOps321"
+#   }
+#   }
     }
 
     resource "aws_iam_role" "bastion" {
