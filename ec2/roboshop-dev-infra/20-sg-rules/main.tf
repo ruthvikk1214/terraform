@@ -16,7 +16,7 @@ resource "aws_security_group_rule" "mongob_bastion" {#mongo accepting connection
   source_security_group_id = data.aws_ssm_parameter.bastion_sg_id.value
   security_group_id = local.mongodb_sg_id
 }
-resource "aws_security_group_rule" "mongod_catalogue" {#mongo accepting connection from catalogue
+resource "aws_security_group_rule" "mongodb_catalogue" {#mongo accepting connection from catalogue
   type              = "ingress"
   from_port         = 27017
   to_port           = 27017
