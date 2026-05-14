@@ -1,14 +1,17 @@
 #!/bin/bash
 set -xe
 
-# Install Terraform
-dnf install -y yum-utils
-dnf-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
-dnf install -y terraform
+# Terraform
+yum install -y yum-utils
+yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+yum install -y terraform
 
-# Install Ansible
+# EPEL for Ansible
+dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+
+# Ansible
 dnf install -y ansible
 
-# Verify
+# Verification
 terraform version > /tmp/terraform_version.txt
 ansible --version > /tmp/ansible_version.txt
