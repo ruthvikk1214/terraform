@@ -1,11 +1,10 @@
     resource "aws_instance" "bastion" {
-    ami           =   local.ami_id
-    instance_type = "t3.micro"
-    subnet_id = local.public_subnet_ids
-     user_data = file("bastion.sh")
-     user_data_replace_on_change = true
-    vpc_security_group_ids = [local.bastion_sg_id]
-    iam_instance_profile = aws_iam_instance_profile.bastion.name
+    ami                    = local.ami_id
+  instance_type          = "t3.micro"
+  subnet_id = local.public_subnet_ids
+  vpc_security_group_ids = [local.bastion_sg_id]
+  iam_instance_profile   = aws_iam_instance_profile.bastion.name
+  user_data              = file("${path.module}/bastion.sh")
     
     
     root_block_device {
