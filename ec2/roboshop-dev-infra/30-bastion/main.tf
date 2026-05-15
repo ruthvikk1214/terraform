@@ -74,6 +74,10 @@ resource "aws_iam_role_policy_attachment" "bastion_ssm" {
   role       = aws_iam_role.bastion.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
 }
+resource "aws_iam_role_policy_attachment" "bastion_iam" {
+  role       = aws_iam_role.bastion.name
+  policy_arn = "arn:aws:iam::aws:policy/IAMFullAccess"
+}
 resource "aws_iam_role_policy_attachment" "bastion_s3" {
   role       = aws_iam_role.bastion.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess" 
