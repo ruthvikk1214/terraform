@@ -24,6 +24,15 @@ resource "aws_security_group_rule" "mongodb_catalogue" {#mongo accepting connect
   source_security_group_id = local.catalogue_sg_id
   security_group_id = local.mongodb_sg_id
 }
+
+resource "aws_security_group_rule" "mongodb_user" {
+  type                     = "ingress"
+  from_port                = 27017
+  to_port                  = 27017
+  protocol                 = "tcp"
+  source_security_group_id = local.user_sg_id
+  security_group_id        = local.mongodb_sg_id
+}
 resource "aws_security_group_rule" "redis_bastion" {#redis accepting connection from bastion
   type              = "ingress"
   from_port         = 22
