@@ -13,3 +13,7 @@ variable "zone_id" {
 variable "domain_name" {
   default = "rk1214.in"
 }
+variable "mysql_root_password" {
+  default   = "DevOps321"
+  sensitive = true
+}

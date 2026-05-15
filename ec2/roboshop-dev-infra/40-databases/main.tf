@@ -157,7 +157,10 @@ resource "terraform_data" "bootstrap-mysql" {
   triggers_replace = [
     aws_instance.mysql.id,
   ]
-
+depends_on = [
+  aws_ssm_parameter.mysql_root_password,
+  aws_iam_instance_profile.mysql
+]
 connection {
       type        = "ssh"
       host        = aws_instance.mysql.private_ip
@@ -177,7 +180,12 @@ provisioner "file" {
     ]
   }
 }
-
+resource "aws_ssm_parameter" "mysql_root_password" {
+  name  = "/${var.project}/${var.environment}/mysql_root_password"
+  type  = "SecureString"
+  value = "DevOps321"
+  overwrite = true
+}
 resource "aws_instance" "catalogue" {
     ami           =   local.ami_id
     instance_type = "t3.micro"
@@ -361,7 +369,7 @@ depends_on = [
 ]
 connection {
       type        = "ssh"
-      host        = aws_instance.frontend.private_ip
+      host        = aws_instance.frontend.public_ip
       user        = "ec2-user"
       password = "DevOps321"
   }
