@@ -1,6 +1,7 @@
 #!/bin/bash
 component=$1
 dnf install ansible -y 
+ansible-galaxy collection install community.mysql
 cd /home/ec2-user
 git clone https://github.com/ruthvikk1214/roboshop-ansible-roles-tf.git
 cd roboshop-ansible-roles-tf
