@@ -82,6 +82,10 @@ resource "aws_iam_role_policy_attachment" "bastion_s3" {
   role       = aws_iam_role.bastion.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess" 
 }
+resource "aws_iam_role_policy_attachment" "bastion_ssm_full" {
+  role       = aws_iam_role.bastion.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMFullAccess"
+}
 resource "aws_iam_instance_profile" "bastion" {
   name = "${var.project}-${var.environment}-bastion"
   role = aws_iam_role.bastion.name
