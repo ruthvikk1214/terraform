@@ -5,9 +5,7 @@ output "my_ip" {
   value = chomp(data.http.my_ip.response_body)
 }
 
-data "aws_ssm_parameter" "bastion_sg_id" {
-  name = "/${var.project}/${var.environment}/bastion_sg_id"
-}
+
 
 data "aws_ssm_parameter" "bastion_sg_id" {
   name = "/${var.project}/${var.environment}/bastion_sg_id"
@@ -20,6 +18,12 @@ data "aws_ssm_parameter" "user_sg_id" {
   name = "/${var.project}/${var.environment}/user_sg_id"
 }
 
+data "aws_ssm_parameter" "frontend_sg_id" {
+  name = "/${var.project}/${var.environment}/frontend_sg_id"
+}
+data "aws_ssm_parameter" "payment_sg_id" {
+  name = "/${var.project}/${var.environment}/payment_sg_id"
+}
 data "aws_ssm_parameter" "cart_sg_id" {
   name = "/${var.project}/${var.environment}/cart_sg_id"
 }
