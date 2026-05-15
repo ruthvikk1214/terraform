@@ -153,15 +153,6 @@ resource "aws_iam_instance_profile" "mysql" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "mysql_ssm" {
-  role       = aws_iam_role.mysql.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
-}
-
-resource "aws_iam_instance_profile" "mysql" {
-  name = "mysql-instance-profile"
-  role = aws_iam_role.mysql.name
-}
 resource "terraform_data" "bootstrap-mysql" {
   triggers_replace = [
     aws_instance.mysql.id,
