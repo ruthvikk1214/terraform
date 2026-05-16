@@ -369,7 +369,7 @@ depends_on = [
 ]
 connection {
       type        = "ssh"
-      host        = aws_instance.frontend.public_ip
+      host        = aws_instance.frontend.private_ip
       user        = "ec2-user"
       password = "DevOps321"
   }
