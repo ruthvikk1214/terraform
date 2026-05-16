@@ -2,6 +2,8 @@
 set -xe
 exec > /var/log/user-data.log 2>&1
 
+git clone https://github.com/ruthvikk1214/terraform.git
+
 yum install -y yum-utils
 yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
 yum install -y terraform
