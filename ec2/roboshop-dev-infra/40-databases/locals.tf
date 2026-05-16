@@ -14,6 +14,13 @@ locals {
   database_subnet_ids = split(",", data.aws_ssm_parameter.database_subnet_ids.value)[0]
   private_subnet_ids = split(",", data.aws_ssm_parameter.private_subnet_ids.value)[0]
   public_subnet_ids = split(",", data.aws_ssm_parameter.public_subnet_ids.value)[0]
+mysql_role_name = join("-", [
+            for name in ["${var.project}","${var.environment}", "mysql"] : title(name)
+        ])
+    mysql_policy_name = join("", [
+            for name in ["${var.project}","${var.environment}", "mysql"] : title(name)
+        ])
+
   common_tags  =    {
     project =   var.project
     environment =   var.environment
