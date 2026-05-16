@@ -126,41 +126,24 @@ resource "aws_instance" "mysql" {
         local.common_tags
     )
     }
-resource "aws_iam_role_policy_attachment" "mysql_ssm" {
-  role       = aws_iam_role.mysql.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
+
+resource "aws_iam_instance_profile" "mysql" {
+  name = "${var.project}-${var.environment}-mysql"
+  role = aws_iam_role.mysql.name
 }
-
-# resource "aws_iam_instance_profile" "mysql" {
-#   name = "mysql-instance-profile"
-#   role = aws_iam_role.mysql.name
-# }
-
-#     resource "aws_iam_role" "mysql" {
-#   name = "mysql"
-
-#   assume_role_policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       {
-#         Effect = "Allow"
-#         Action = "sts:AssumeRole"
-#         Principal = {
-#           Service = "ec2.amazonaws.com"
-#         }
-#       }
-#     ]
-#   })
+# resource "aws_iam_role_policy_attachment" "mysql_ssm" {
+#   role       = aws_iam_role.mysql.name
+#   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
 # }
 
 resource "terraform_data" "bootstrap-mysql" {
   triggers_replace = [
     aws_instance.mysql.id,
   ]
-depends_on = [
-  aws_ssm_parameter.mysql_root_password,
-  aws_iam_instance_profile.mysql
-]
+# depends_on = [
+#   aws_ssm_parameter.mysql_root_password,
+#   aws_iam_instance_profile.mysql
+# ]
 connection {
       type        = "ssh"
       host        = aws_instance.mysql.private_ip
@@ -176,7 +159,7 @@ provisioner "file" {
   provisioner "remote-exec" {
     inline = [ 
       "chmod +x /tmp/bootstrap.sh",
-      "sudo /tmp/bootstrap.sh mysql DevOps321"
+      "sudo /tmp/bootstrap.sh mysql ${var.environment}"
     ]
   }
 }
