@@ -131,27 +131,27 @@ resource "aws_iam_role_policy_attachment" "mysql_ssm" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
 }
 
-resource "aws_iam_instance_profile" "mysql" {
-  name = "mysql-instance-profile"
-  role = aws_iam_role.mysql.name
-}
+# resource "aws_iam_instance_profile" "mysql" {
+#   name = "mysql-instance-profile"
+#   role = aws_iam_role.mysql.name
+# }
 
-    resource "aws_iam_role" "mysql" {
-  name = "mysql"
+#     resource "aws_iam_role" "mysql" {
+#   name = "mysql"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = "sts:AssumeRole"
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect = "Allow"
+#         Action = "sts:AssumeRole"
+#         Principal = {
+#           Service = "ec2.amazonaws.com"
+#         }
+#       }
+#     ]
+#   })
+# }
 
 resource "terraform_data" "bootstrap-mysql" {
   triggers_replace = [
