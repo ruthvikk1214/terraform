@@ -112,6 +112,12 @@ provisioner "file" {
     ]
   }
 }
+resource "aws_ssm_parameter" "mysql_root_password" {
+  name      = "/${var.project}/${var.environment}/mysql_root_password"
+  type      = "SecureString"
+  value     = "DevOps321"
+  overwrite = true
+}
 resource "aws_instance" "mysql" {
     ami           =   local.ami_id
     instance_type = "t3.micro"

@@ -10,7 +10,14 @@
         {
             "Sid": "VisualEditor1",
             "Effect": "Allow",
-            "Action": "ssm:DescribeParameters",
+            "Action": [
+                "ssm:DescribeParameters",
+                 "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:GetParametersByPath",
+        "ssm:DescribeParameters"
+                
+        ],
             "Resource": "*"
         }
     ]
