@@ -41,7 +41,7 @@ This folder defines the intricate web of permitted traffic flow between the Secu
 ## 4. `30-bastion` (Bastion Host)
 This folder provisions the administrative entry point into the private network.
 
-*   **What it does:** Creates an EC2 instance in the *public* subnet to serve as a jump box.
+*   **What it does:** Creates an EC2 instance in the *public* subnet to serve as a jump host.
 *   **IAM Role Management (`main.tf`):** Because Terraform and Ansible will be run *from* this bastion host to manage the rest of the infrastructure, it attaches a very powerful IAM Role to the instance. This role includes permissions like `AmazonEC2FullAccess`, `AmazonRoute53FullAccess`, `AmazonS3FullAccess`, `AmazonSSMFullAccess`, and `IAMFullAccess`.
 *   **Bootstrapping (`bastion.sh`):** It uses `user_data` to automatically install required tools like `terraform` and `ansible` onto the bastion host right when it boots up.
 
