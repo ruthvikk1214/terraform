@@ -178,3 +178,25 @@ To effectively utilize ALBs in your infrastructure, it's crucial to understand t
    * If a target fails a certain number of health checks, the ALB marks it as unhealthy and stops sending traffic to it.
    * Once the instance becomes healthy again (passes the checks), the ALB automatically resumes sending traffic to it.
    * Health checks help you meet the 99.95% availability SLA for ALB usage.
+
+---
+
+## 7. `60-catalogue` (Catalogue Component & AMI Baking Pattern)
+This folder provisions the EC2 instance for the `catalogue` backend service and bakes it into a custom Amazon Machine Image (AMI).
+
+*   **Subnet List vs. String Alignment:** 
+    *   To prevent type/index errors, `locals.tf` fetches the comma-separated private subnets as a clean list using:
+        ```terraform
+        private_subnet_ids = split(",", data.aws_ssm_parameter.private_subnet_ids.value)
+        ```
+    *   In `main.tf`, the first subnet is safely accessed using:
+        ```terraform
+        subnet_id = local.private_subnet_ids[0]
+        ```
+*   **Dynamic Data Sources (`data.tf`):** A dedicated data configuration resolves parameters dynamically, including the base `joindevops` AMI (`Redhat-9-DevOps-Practice`), `private_subnet_ids`, and the `catalogue_sg_id` from SSM Parameter Store.
+*   **Automated Bootstrap and Baking Lifecycle:**
+    1.  **Creation:** An EC2 instance `aws_instance.catalogue` is launched.
+    2.  **Configuration:** The `terraform_data.catalogue` resource triggers, copies `bootstrap.sh`, and runs Ansible locally on the instance to configure it fully as the catalogue service.
+    3.  **State Management (Stop):** The `aws_ec2_instance_state.catalogue` resource is defined to automatically change the instance state to `stopped` once the bootstrap process is successfully completed.
+    4.  **Baking:** The `aws_ami_from_instance.catalogue` resource takes the stopped, fully bootstrapped instance and bakes it into a custom AMI named `${var.project}-${var.environment}-catalogue`.
+    5.  **Benefit:** This pre-baked AMI can be used for zero-delay auto-scaling and immutable deployments, eliminating the need to run Ansible playbooks from scratch during scale-out events.
