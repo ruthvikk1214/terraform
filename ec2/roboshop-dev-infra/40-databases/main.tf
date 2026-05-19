@@ -175,6 +175,7 @@ provisioner "file" {
 #   value = "DevOps321"
 #   overwrite = true
 # }
+/*
 resource "aws_instance" "catalogue" {
     ami           =   local.ami_id
     instance_type = "t3.micro"
@@ -414,3 +415,4 @@ provisioner "file" {
     ]
   }
 }
+*/

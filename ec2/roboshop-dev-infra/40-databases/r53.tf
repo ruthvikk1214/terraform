@@ -31,6 +31,7 @@ resource "aws_route53_record" "mysql" {
   records = [aws_instance.mysql.private_ip]
   allow_overwrite = true
 }
+/*
 resource "aws_route53_record" "user" {
   zone_id = var.zone_id
   name    = "user-${var.environment}.${var.domain_name}"
@@ -79,3 +80,4 @@ resource "aws_route53_record" "frontend" {
   records = [aws_instance.frontend.private_ip] 
   allow_overwrite = true
 }
+*/
