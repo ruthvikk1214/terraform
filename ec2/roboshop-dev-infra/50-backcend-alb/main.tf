@@ -30,13 +30,13 @@ resource "aws_lb_listener" "HTTP" {
 }
 resource "aws_route53_record" "backend_alias" {
   zone_id = var.zone_id
-  name    = "*.backend-alb-${var.project}-${var.project}-${var.domain_name}" # The DNS name you want to use
+  name    = "*.backend-alb-${var.project}-${var.environment}.${var.domain_name}" # The DNS name you want to use
   type    = "A"               # Use "A" for IPv4 or "AAAA" for IPv6
 
   alias {
     # Reference the ALB's DNS name and Hosted Zone ID
-    name                   = aws_lb.backend.dns_name
-    zone_id                = aws_lb.backend.zone_id
+    name                   = aws_lb.backend-alb.dns_name
+    zone_id                = aws_lb.backend-alb.zone_id
     evaluate_target_health = true # Recommended to let Route 53 check ALB health
   }
 }
