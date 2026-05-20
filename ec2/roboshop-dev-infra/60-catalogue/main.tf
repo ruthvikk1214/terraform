@@ -53,3 +53,4 @@ resource "aws_ami_from_instance" "catalogue" {
     local.common_tags
   )
 }
+  
