@@ -57,7 +57,7 @@ resource "aws_ami_from_instance" "catalogue" {
 resource "aws_lb_target_group" "catalogue" {
   name                 = "${var.project}-${var.environment}-catalogue"
   port                 = 8080
-  protocol             = "HTTP"
+  protocol             = HTTP
   vpc_id               = local.vpc_id
   deregistration_delay = 60
   health_check {
@@ -90,30 +90,68 @@ resource "aws_launch_template" "catalogue" {
 }
 
 resource "aws_autoscaling_group" "catalogue" {
-  name                = "${var.project}-${var.environment}-catalogue"
-  vpc_zone_identifier = local.private_subnet_ids
-  target_group_arns   = [aws_lb_target_group.catalogue.arn]
-  min_size            = 1
-  max_size            = 2
-  desired_capacity    = 1
-  
+  name                      = "${var.project}-${var.environment}-catalogue"
+  vpc_zone_identifier       = local.private_subnet_ids
+  target_group_arns         = [aws_lb_target_group.catalogue.arn]
+  min_size                  = 1
+  max_size                  = 10
+  desired_capacity          = 1
+  force_delete              = false
+  health_check_grace_period = 120
+  health_check_type         = "ELB"
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 50
+    }
+    triggers = ["launch_template"]
+  }
+
+  timeouts {
+    delete = "15m"
+  }
   launch_template {
     id      = aws_launch_template.catalogue.id
     version = "$Latest"
   }
-
-  dynamic "tag" {
-    for_each = merge(
-      {
-        Name = "${var.project}-${var.environment}-catalogue"
-      },
-      local.common_tags
-    )
-    content {
-      key                 = tag.key
-      value               = tag.value
-      propagate_at_launch = true
-    }
+  tag {
+    key                 = "Name"
+    value               = "${var.project}-${var.environment}-catalogue"
+    propagate_at_launch = true
   }
 }
 
+resource "aws_autoscaling_policy" "catalogue_scale_up" {
+  name                   = "${var.project}-${var.environment}-catalogue-scale-up"
+  autoscaling_group_name = aws_autoscaling_group.catalogue.name
+  policy_type            = "TargetTrackingScaling"
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value = 50.0
+  }
+}
+resource "aws_alb_listener_rule" "catalogue" {
+  listener_arn = local.backend_alb_listener_arn
+  priority     = 10
+  condition {
+    host_header {
+      values = ["catalogue.backend-alb-${var.environment}.${var.domain_name}"]
+    }
+  }
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.catalogue.arn
+  }
+}
+
+resource "terraform_data" "catalogue-delete" {
+  triggers_replace = [
+    aws_instance.catalogue.id,
+  ]
+  depends_on = [aws_autoscaling_group.catalogue]
+  provisioner "local-exec" {
+    command = "aws ec2 terminate-instances  ${aws_instance.catalogue.id}"
+  }
+}
