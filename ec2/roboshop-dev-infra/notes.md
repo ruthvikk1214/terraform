@@ -314,3 +314,36 @@ This folder provisions the EC2 instance for the `catalogue` backend service and 
     3.  **State Management (Stop):** The `aws_ec2_instance_state.catalogue` resource is defined to automatically change the instance state to `stopped` once the bootstrap process is successfully completed.
     4.  **Baking:** The `aws_ami_from_instance.catalogue` resource takes the stopped, fully bootstrapped instance and bakes it into a custom AMI named `${var.project}-${var.environment}-catalogue`.
     5.  **Benefit:** This pre-baked AMI can be used for zero-delay auto-scaling and immutable deployments, eliminating the need to run Ansible playbooks from scratch during scale-out events.
+
+---
+
+## 8. Terraform Git Management & Core Lifecycle Concepts
+
+### Why We Never Push the `.terraform` Directory
+The `.terraform` directory is a local working directory created by Terraform during initialization. **It must be added to `.gitignore` and never committed to Git** for several critical reasons:
+1. **Massive Size**: It houses the compiled provider binaries (such as the AWS provider plugin). These binaries are extremely heavy (often hundreds of megabytes) and will quickly bloat the git repository.
+2. **Platform Specificity**: The downloaded provider binaries are compiled specifically for the OS and architecture of the machine running the code (e.g., Windows x64 vs. Linux arm64). Committing them would break executions on different developer machines or CI/CD pipelines.
+3. **Redundancy**: The directory contains no unique configuration code. It is designed to be easily re-generated at any moment by running `terraform init`.
+
+---
+
+### Understanding Core Lifecycle Commands & Files
+
+#### 1. `terraform init`
+This is the mandatory first command you run when setting up or cloning a Terraform configuration. It performs the following initialization steps:
+* **Downloads Providers**: Reads your configuration (e.g., `required_providers`) and downloads the correct provider plugins from the Terraform Registry into the local `.terraform` directory.
+* **Initializes the Backend**: Sets up the state storage location (local file or remote backends like AWS S3/Azure Blob/Terraform Cloud).
+* **Downloads Modules**: Resolves and retrieves any local or remote module dependencies referenced in your code.
+
+#### 2. `terraform init -reconfigure`
+This option tells Terraform to ignore any cached backend configuration stored in the `.terraform` folder and force a fresh reconfiguration of the state backend.
+* **When to use it**: 
+  * When you are switching between different remote state backends or S3 buckets.
+  * When switching AWS accounts/environments that require entirely separate state tracking.
+  * When backend credentials or configuration keys change.
+* **Why it's better than simple init**: Standard `terraform init` will try to migrate or copy state between backends if it sees a cached backend state. `-reconfigure` completely overrides the cache and initializes clean.
+
+#### 3. The Dependency Lock File (`.terraform.lock.hcl`)
+When you run `terraform init`, Terraform generates or updates a `.terraform.lock.hcl` file in your root folder. 
+* **What it does**: It locks the exact versions of the provider plugins you initialized, along with their cryptographic hash checksums for all supported operating systems.
+* **Why we DO commit it**: Unlike the `.terraform` directory, **you should always commit `.terraform.lock.hcl` to Git**. It ensures that every developer and CI/CD agent in your team downloads the *exact same provider versions* (e.g., AWS provider `v5.40.0`), preventing unexpected breaking changes or provider upgrades from breaking your deployments.
