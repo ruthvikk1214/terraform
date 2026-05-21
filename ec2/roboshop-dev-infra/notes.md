@@ -314,6 +314,10 @@ This folder provisions the EC2 instance for the `catalogue` backend service and 
     3.  **State Management (Stop):** The `aws_ec2_instance_state.catalogue` resource is defined to automatically change the instance state to `stopped` once the bootstrap process is successfully completed.
     4.  **Baking:** The `aws_ami_from_instance.catalogue` resource takes the stopped, fully bootstrapped instance and bakes it into a custom AMI named `${var.project}-${var.environment}-catalogue`.
     5.  **Benefit:** This pre-baked AMI can be used for zero-delay auto-scaling and immutable deployments, eliminating the need to run Ansible playbooks from scratch during scale-out events.
+*   **Scale-Up Policy & Warmup Timing (`estimated_instance_warmup`):**
+    *   In the Target Tracking Scaling Policy (`aws_autoscaling_policy.catalogue_scale_up`), we explicitly configure `estimated_instance_warmup = 120` (2 minutes).
+    *   **What it does:** It tells AWS Auto Scaling how long to wait after launching a new EC2 instance before including its CPU utilization/metrics in the CloudWatch average.
+    *   **Why it's critical**: It takes time for an EC2 instance to spin up, complete its initialization scripts, and load the Java app. If we didn't specify a warmup period, CloudWatch would see the newly launched instance as having 0% load initially, or it would still see high average CPU and trigger *even more* instances in rapid succession (scaling thrashing). A 120-second warmup gives the instance room to boot and take on traffic before another scaling action is evaluated.
 
 ---
 
@@ -347,3 +351,19 @@ This option tells Terraform to ignore any cached backend configuration stored in
 When you run `terraform init`, Terraform generates or updates a `.terraform.lock.hcl` file in your root folder. 
 * **What it does**: It locks the exact versions of the provider plugins you initialized, along with their cryptographic hash checksums for all supported operating systems.
 * **Why we DO commit it**: Unlike the `.terraform` directory, **you should always commit `.terraform.lock.hcl` to Git**. It ensures that every developer and CI/CD agent in your team downloads the *exact same provider versions* (e.g., AWS provider `v5.40.0`), preventing unexpected breaking changes or provider upgrades from breaking your deployments.
+
+---
+
+### Why Destroy Order Matters (Reverse Creation Order)
+When tearing down multi-layered AWS environments like Roboshop, **you must destroy the folders in the exact reverse order of their creation**:
+1. `60-catalogue` (Application code & Auto-scaling groups)
+2. `50-backend-alb` (Application load balancers)
+3. `30-bastion` (Jump hosts / Bastion compute)
+4. `20-sg-rules` (Security group ingress/egress rules)
+5. `10-sg` (Security groups)
+6. `00-vpc` (Virtual Private Cloud networks)
+
+**Why this is mandatory**:
+* **Dependency Locking**: A Security Group cannot be deleted if there is still a Security Group Rule that references it or a running instance associated with it.
+* **VPC Deletion Constraints**: A VPC cannot be destroyed if it still contains active network interfaces, security groups, routing tables, subnets, or load balancers.
+* Tearing down layer-by-layer backwards from top (Apps) to bottom (VPC) cleanly untangles and removes these AWS dependency linkages without triggering "DependencyViolation" or "ActiveResource" errors.
