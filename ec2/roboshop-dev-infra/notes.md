@@ -179,6 +179,120 @@ To effectively utilize ALBs in your infrastructure, it's crucial to understand t
    * Once the instance becomes healthy again (passes the checks), the ALB automatically resumes sending traffic to it.
    * Health checks help you meet the 99.95% availability SLA for ALB usage.
 
+### AWS ALB Request Flow (Roboshop Host-Based Routing Example)
+
+Here is a visual and step-by-step representation of how a request flows through the AWS Application Load Balancer using Host-Based routing in the Roboshop environment.
+
+#### 1. Host-Based Routing Flow Diagram (Mermaid)
+
+```mermaid
+graph TD
+    classDef client fill:#e1f5fe,stroke:#039be5,stroke-width:2px,color:#01579b;
+    classDef frontend fill:#e8f5e9,stroke:#43a047,stroke-width:2px,color:#1b5e20;
+    classDef dns fill:#fff3e0,stroke:#ffb74d,stroke-width:2px,color:#e65100;
+    classDef alb fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px,color:#4a148c;
+    classDef backend fill:#efebe9,stroke:#8d6e63,stroke-width:2px,color:#3e2723;
+    classDef db fill:#ffebee,stroke:#e57373,stroke-width:2px,color:#b71c1c;
+
+    Browser["💻 Customer Browser<br>http://frontend-dev.rk1214.in"]:::client
+    Frontend["🖥️ Frontend EC2 (Nginx :80)<br>User clicks 'Catalogue'"]:::frontend
+    Route53["🌐 Route53 DNS<br>Resolves catalogue.backend-alb-dev.rk1214.in"]:::dns
+    ALBListener["⚡ Backend ALB Listener (:80)<br>Accepts incoming HTTP traffic"]:::alb
+    
+    RuleCheck{"🔍 Listener Rule Check:<br>Host Header?"}:::alb
+    
+    TG_Catalogue["🎯 Catalogue Target Group (:8080)<br>Forward to healthy target"]:::alb
+    TG_Others["🎯 Other Target Groups<br>(user/cart/shipping/payment)"]:::alb
+    
+    EC2_Catalogue["☕ Catalogue EC2 Instance (:8080)<br>Java app processes request"]:::backend
+    MongoDB["💾 MongoDB Database (:27017)<br>Stores product data"]:::db
+
+    %% Forward path
+    Browser -->|1. Opens frontend| Frontend
+    Frontend -->|2. API request: http://catalogue...| Route53
+    Route53 -->|3. Resolves to Backend ALB DNS| ALBListener
+    ALBListener -->|4. Inspects request| RuleCheck
+    
+    RuleCheck -->|YES: Host matches catalogue.backend-alb-dev.rk1214.in| TG_Catalogue
+    RuleCheck -->|NO: Host matches others| TG_Others
+    
+    TG_Catalogue -->|5. Forwards traffic| EC2_Catalogue
+    EC2_Catalogue -->|6. Fetches data| MongoDB
+    
+    %% Return path
+    MongoDB -.->|7. Product data| EC2_Catalogue
+    EC2_Catalogue -.-> ALBListener
+    ALBListener -.-> Frontend
+    Frontend -.->|Customer sees products| Browser
+```
+
+#### 2. Text-Based Flowchart
+
+```text
+Customer Browser
+     |
+     | 1. Opens frontend: http://frontend-dev.rk1214.in
+     v
+Frontend EC2 (Nginx :80)
+     |
+     | 2. User clicks "Catalogue" -> Sends API request:
+     |    http://catalogue.backend-alb-dev.rk1214.in/products
+     v
+Route53 DNS
+     |
+     | 3. Resolves hostname to Backend ALB DNS
+     v
+Backend ALB Listener (:80)
+     |
+     | 4. Listener accepts incoming HTTP traffic
+     v
+Listener Rule Check
+     |
+     | Host Header? catalogue.backend-alb-dev.rk1214.in
+     |
+     +---- YES ----> Forward to Catalogue Target Group (:8080)
+     |
+     +---- NO -----> Check other listener rules (user/cart/shipping/payment)
+     v
+Catalogue Target Group (:8080)
+     |
+     | 5. ALB forwards traffic to healthy target
+     v
+Catalogue EC2 Instance (:8080)
+     |
+     | 6. Java app processes request
+     v
+MongoDB (:27017)
+     |
+     | 7. Fetch product data
+     v
+[Response Flow: MongoDB -> Catalogue App -> ALB -> Frontend -> Customer sees products]
+```
+
+#### 3. Port Responsibility Matrix
+
+| Port | Protocol / Service | Component Role / Context |
+| :--- | :--- | :--- |
+| **80** | HTTP | Public traffic (ALB / Frontend listener) |
+| **8080** | Custom / HTTP | Backend application traffic (Java apps: Catalogue, User, etc.) |
+| **27017** | MongoDB | Database layer for Catalogue & User |
+| **6379** | Redis | In-memory key-value cache |
+| **3306** | MySQL | Relational database (Shipping data) |
+| **5672** | RabbitMQ | Message queue broker (Payment) |
+
+#### 4. ALB Core Architectural Concepts
+
+*   **Listener:** Receives incoming traffic on a specified port and protocol.
+*   **Listener Rule:** Decides how to route incoming traffic based on criteria (Host headers, paths, etc.).
+*   **Target Group:** The backend destination containing one or more registered, healthy servers.
+*   **Health Check:** Performs automated, periodic checks to confirm that the backend app is responsive and alive.
+
+**Example Routing Scenario:**
+*   **Customer Request:** `catalogue.backend-alb-dev.rk1214.in:80`
+*   **ALB Listener:** Receives traffic on port `80`.
+*   **Listener Rule:** Checks conditions: `If host = catalogue.backend-alb-dev.rk1214.in`.
+*   **Target Group:** Forwards request to healthy catalogue instances on backend port `8080`.
+
 ---
 
 ## 7. `60-catalogue` (Catalogue Component & AMI Baking Pattern)
