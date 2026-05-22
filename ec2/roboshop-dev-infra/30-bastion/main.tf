@@ -1,48 +1,34 @@
-    resource "aws_instance" "bastion" {
-    ami                    = local.ami_id
+resource "aws_instance" "bastion" {
+  ami                    = local.ami_id
   instance_type          = "t3.micro"
-  subnet_id = local.public_subnet_ids
+  subnet_id              = local.public_subnet_ids
   vpc_security_group_ids = [local.bastion_sg_id]
   iam_instance_profile   = aws_iam_instance_profile.bastion.name
   user_data              = file("${path.module}/bastion.sh")
-    
-    
-    root_block_device {
-      volume_size = 50
-      volume_type = "gp3"
-      tags = merge(
-        {
-            Name = "${var.project}-${var.environment}-diskaddition"
-        },
-        local.common_tags
-    )
-    }
+
+
+  root_block_device {
+    volume_size = 50
+    volume_type = "gp3"
     tags = merge(
-        {
-            Name = "${var.project}-${var.environment}-bastion"
-        },
-        local.common_tags
+      {
+        Name = "${var.project}-${var.environment}-diskaddition"
+      },
+      local.common_tags
     )
-# provisioner "remote-exec" {
-#     inline = [
-#       "sudo yum install -y yum-utils",
-#       "sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo",
-#       "sudo yum -y install terraform", 
-#       "sudo dnf install ansible -y "
-#     ]
-#     connection {
-#       type        = "ssh"
-#       host        = aws_instance.bastion.public_ip
-#       user        = "ec2-user"
-#       password = "DevOps321"
-#   }
-#   }
-    }
+  }
+  tags = merge(
+    {
+      Name = "${var.project}-${var.environment}-bastion"
+    },
+    local.common_tags
+  )
+}
 resource "aws_iam_role_policy_attachment" "bastion_route53" {
   role       = aws_iam_role.bastion.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
 }
-    resource "aws_iam_role" "bastion" {
+resource "aws_iam_role" "bastion" {
   name = "bastion"
 
   # Terraform's "jsonencode" function converts a
@@ -80,7 +66,7 @@ resource "aws_iam_role_policy_attachment" "bastion_iam" {
 }
 resource "aws_iam_role_policy_attachment" "bastion_s3" {
   role       = aws_iam_role.bastion.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess" 
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 }
 resource "aws_iam_role_policy_attachment" "bastion_ssm_full" {
   role       = aws_iam_role.bastion.name
