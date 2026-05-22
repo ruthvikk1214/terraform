@@ -59,7 +59,7 @@ resource "aws_lb_target_group" "catalogue" {
   port                 = 8080
   protocol             = "HTTP"
   vpc_id               = local.vpc_id
-  deregistration_delay = 60
+  deregistration_delay = 30
   health_check {
     path                = "/health"
     port                = "traffic-port"
@@ -125,7 +125,7 @@ resource "aws_autoscaling_policy" "catalogue_scale_up" {
   name                      = "${var.project}-${var.environment}-catalogue-scale-up"
   autoscaling_group_name    = aws_autoscaling_group.catalogue.name
   policy_type               = "TargetTrackingScaling"
-  estimated_instance_warmup = 120
+  estimated_instance_warmup = 60
   target_tracking_configuration {
     predefined_metric_specification {
       predefined_metric_type = "ASGAverageCPUUtilization"
