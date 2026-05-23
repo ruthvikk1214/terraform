@@ -1,6 +1,6 @@
-resource "aws_ssm_parameter" "backend-alb_listener_arn" {
-  name        = "/${var.project}/${var.environment}/backend-alb_listener_arn"
+resource "aws_ssm_parameter" "frontend-alb_listener_arn" {
+  name        = "/${var.project}/${var.environment}/frontend-alb_listener_arn"
   type        = "String"
-  description = "Listener ARN for the backend ALB"
+  description = "Listener ARN for the frontend ALB"
   value       = aws_lb_listener.HTTP.arn
 }
