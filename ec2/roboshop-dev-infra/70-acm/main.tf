@@ -2,6 +2,10 @@ resource "aws_acm_certificate" "roboshop" {
   domain_name       = "*.${var.domain_name}"
   validation_method = "DNS"
 
+  subject_alternative_names = [
+    "*.frontend-alb-${var.project}-${var.environment}.${var.domain_name}"
+  ]
+
   tags = merge(
     {
       Name = "${var.project}-${var.environment}-acm"
