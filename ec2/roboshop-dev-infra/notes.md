@@ -128,7 +128,26 @@ This folder manages the SSL/TLS certificate layer to enable secure HTTPS communi
 
 ---
 
-## 9. Load Balancer Concepts
+## 9. `80-frontend-alb` (Frontend Application Load Balancer)
+This folder provisions the public-facing Application Load Balancer (ALB) that manages secure traffic from the internet to the frontend instances.
+
+*   **What it does:** It sets up an internet-facing, high-availability Application Load Balancer to route client traffic securely to the frontend application layer.
+*   **External Scope (`internal = false`):** It is designated as an internet-facing load balancer. It has a public DNS name and public IP addresses to accept connections from the outside world.
+*   **Placement:** It is deployed across the public subnets to allow direct internet ingress.
+*   **Security:** It associates the dedicated frontend ALB security group (`local.frontend_alb_sg_id`) to control permitted traffic.
+*   **Listeners & Secure Rules (`main.tf`):**
+    *   Creates an HTTPS listener on port 443.
+    *   References the SSL/TLS certificate from the SSM parameter (`local.acm_arn`) to enable secure HTTPS termination.
+    *   Configures a **fixed-response** default action returning a simple HTML message (`"<h1> Frontend ALB is working fine</h1>"` with status `200`) as fallback and health confirmation.
+*   **DNS & Alias Record Setup (`main.tf`):**
+    *   Creates a wildcard Route 53 `A` record alias (`*.frontend-alb-dev.rk1214.in`) pointing directly to the ALB's DNS name.
+    *   This allows clean subdomains to point securely to our frontend application.
+*   **State Management & SSM Integration (`parameters.tf`):**
+    *   It exports the frontend ALB HTTPS Listener ARN to the AWS SSM Parameter Store (`/roboshop/dev/frontend-alb_listener_arn`) for future use.
+
+---
+
+## 10. Load Balancer Concepts
 
 ### How Does a Load Balancer Work?
 A Load Balancer acts as a "traffic cop" sitting in front of your servers and routing client requests across all servers capable of fulfilling those requests in a manner that maximizes speed and capacity utilization. 
@@ -359,7 +378,7 @@ MongoDB (:27017)
 
 ---
 
-## 10. Terraform Git Management & Core Lifecycle Concepts
+## 11. Terraform Git Management & Core Lifecycle Concepts
 
 ### Why We Never Push the `.terraform` Directory
 The `.terraform` directory is a local working directory created by Terraform during initialization. **It must be added to `.gitignore` and never committed to Git** for several critical reasons:
@@ -407,3 +426,40 @@ When tearing down multi-layered AWS environments like Roboshop, **you must destr
 * **Dependency Locking**: A Security Group cannot be deleted if there is still a Security Group Rule that references it or a running instance associated with it.
 * **VPC Deletion Constraints**: A VPC cannot be destroyed if it still contains active network interfaces, security groups, routing tables, subnets, or load balancers.
 * Tearing down layer-by-layer backwards from top (Apps) to bottom (VPC) cleanly untangles and removes these AWS dependency linkages without triggering "DependencyViolation" or "ActiveResource" errors.
+
+---
+
+## 12. Troubleshooting & Lessons Learned (May 2026)
+
+### Bug 1: SSM Parameter Resource Not Found (`70-acm` vs `80-frontend-alb` Dependency)
+*   **Problem:** Attempting to apply `80-frontend-alb` failed with the error:
+    ```text
+    Error: reading SSM Parameter (/roboshop/dev/frontend_alb_certificate_arn): couldn't find resource
+    ```
+*   **Cause:** The SSM parameter for the ACM certificate ARN is created in the `70-acm` module. The `80-frontend-alb` module retrieves this parameter via a data source. Because `70-acm` had not been applied, the parameter did not exist in AWS SSM Parameter Store yet.
+*   **Fix:** Navigated to `70-acm/` and successfully ran `terraform apply -auto-approve` first, creating the SSM parameter, before running the apply in `80-frontend-alb/`.
+
+### Bug 2: HTTPS:443 Unreachable on Frontend ALB (`20-sg-rules` SG ID Mismatch)
+*   **Problem:** The frontend load balancer deployed successfully, but the AWS Console reported **"HTTPS:443 Not reachable"** with a tooltip stating that security groups did not allow traffic.
+*   **Cause:** In `20-sg-rules/main.tf`, the rule `frontend_alb_internet` (allowing ingress on port 443 from `0.0.0.0/0`) incorrectly targeted `local.frontend_sg_id` (the security group for the frontend EC2 instances) instead of `local.frontend_alb_sg_id` (the security group for the ALB itself).
+*   **Fix:**
+    1. Added `data.aws_ssm_parameter.frontend_alb_sg_id` in `20-sg-rules/data.tf`.
+    2. Exposed `frontend_alb_sg_id` in `20-sg-rules/locals.tf`.
+    3. Corrected `security_group_id = local.frontend_alb_sg_id` in `20-sg-rules/main.tf`.
+    4. Ran `terraform apply` in `20-sg-rules/` to apply the correct rule attachments.
+
+### Bug 3: Hostname Verification Failed / SEC_E_WRONG_PRINCIPAL (ACM Wildcard Limitation)
+*   **Problem:** Running `curl https://vre.frontend-alb-roboshop-dev.rk1214.in/` failed with SSL check error:
+    ```text
+    curl: (60) schannel: SNI or certificate check failed: SEC_E_WRONG_PRINCIPAL (0x80090322) - The target principal name is incorrect.
+    ```
+*   **Cause:** The original certificate created in `70-acm` was only for `*.rk1214.in`. A wildcard SSL certificate is strictly single-level (only matches `anything.rk1214.in`). It does NOT match a nested domain like `vre.frontend-alb-roboshop-dev.rk1214.in` (which is 3 levels deep).
+*   **Fix:**
+    1. Added a **Subject Alternative Name (SAN)** list to the `aws_acm_certificate.roboshop` resource in `70-acm/main.tf` to cover the deeper wildcard pattern:
+       ```terraform
+       subject_alternative_names = [
+         "*.frontend-alb-${var.project}-${var.environment}.${var.domain_name}"
+       ]
+       ```
+    2. Applied the change in `70-acm/` (creating a new validated ACM certificate and updating SSM).
+    3. Re-applied the change in `80-frontend-alb/` to associate the new certificate with the HTTPS listener, resolving the verification error completely.
