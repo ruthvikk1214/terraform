@@ -463,3 +463,65 @@ When tearing down multi-layered AWS environments like Roboshop, **you must destr
        ```
     2. Applied the change in `70-acm/` (creating a new validated ACM certificate and updating SSM).
     3. Re-applied the change in `80-frontend-alb/` to associate the new certificate with the HTTPS listener, resolving the verification error completely.
+
+### Bug 4: ACM Request Certificate Access Denied on Bastion
+*   **Problem:** Running `terraform apply` in `70-acm` from the Bastion host threw an `AccessDeniedException` when requesting ACM certificates:
+    ```text
+    operation error ACM: RequestCertificate: AccessDeniedException: User is not authorized to perform: acm:RequestCertificate
+    ```
+*   **Cause:** The granular IAM Role attached to the Bastion host (`bastion`) lacked the necessary permissions to request and validate ACM certificates.
+*   **Fix:**
+    1. Added the `AWSCertificateManagerFullAccess` policy attachment to the `bastion` IAM role in `30-bastion/main.tf`.
+    2. Ran `terraform apply` inside `30-bastion/` to attach the policy dynamically to the existing Bastion host without needing to recreate the instance.
+
+### Bug 5: Bastion LVM Disk Full / No Space Left on Device
+*   **Problem:** Running `terraform init` or other operations on the Bastion threw errors:
+    ```text
+    no space left on device
+    ```
+*   **Cause:** While the Bastion host was provisioned with a 50GB EBS volume, the default RedHat LVM layout did not automatically expand, leaving the root partition (`/`) locked at only 6.0GB (97% full). Additionally, duplicate **150MB+** provider binaries were downloaded in every directory (`00-vpc`, `10-sg`, `90-components`, etc.).
+*   **Fix:**
+    1. Expanded the physical partition: `growpart /dev/nvme0n1 4`
+    2. Resized the LVM Physical Volume: `pvresize /dev/nvme0n1p4`
+    3. Resized the root Logical Volume: `lvextend -l +100%FREE /dev/RootVG/rootVol` (Note: case-sensitive name `rootVol`).
+    4. Grew the XFS filesystem: `xfs_growfs /`
+    5. Configured a **Terraform Global Plugin Cache** in `~/.terraformrc` to share a single copy of provider plugins across all folders, saving gigabytes of disk space:
+       ```hcl
+       plugin_cache_dir = "$HOME/.terraform.d/plugin-cache"
+       ```
+
+### Bug 6: SSM Listener ARN Parameter Name Mismatch
+*   **Problem:** Applying `90-components` failed with:
+    ```text
+    Error: reading SSM Parameter (/roboshop/dev/backend_alb_listener_arn): couldn't find resource
+    ```
+*   **Cause:** The SSM parameter for backend/frontend listeners was created with hyphens in `80-frontend-alb` (`backend-alb_listener_arn`), but the component module was configured to read them with underscores (`backend_alb_listener_arn`).
+*   **Fix:** Updated the parameter lookups in the component module's `data.tf` to match the actual AWS SSM parameter names (`backend-alb_listener_arn` and `frontend-alb_listener_arn`).
+
+### Bug 7: File Provisioner bootstrap.sh Path Mismatch
+*   **Problem:** Component deployment failed with:
+    ```text
+    stat bootstrap.sh: no such file or directory
+    ```
+*   **Cause:** The file provisioner inside the component module used a local path `source = "bootstrap.sh"`. Terraform evaluates provisioner file paths relative to the root execution directory (e.g. `90-components/`), where `bootstrap.sh` does not exist.
+*   **Fix:** Updated the `source` path inside the module's `main.tf` to use `${path.module}/bootstrap.sh` to correctly resolve files relative to the module folder itself.
+
+### Bug 8: Target Group & Autoscaling Group Naming Conflicts (`DuplicateTargetGroupName`)
+*   **Problem:** Running `terraform apply` in `90-components` threw errors stating that resources (Target Groups, Launch Templates, etc.) already existed with the name `roboshop-dev-main`.
+*   **Cause:** In the reusable component module's `main.tf`, several AWS resources were hardcoded to use `-main` as a suffix. When looping over multiple components (`cart`, `catalogue`, `frontend`) using `for_each`, they all attempted to create resources with the exact same name, causing collisions in AWS.
+*   **Fix:** Replaced the hardcoded `-main` suffix with `-${var.component}` in the module's `main.tf` for AMIs, Target Groups, Launch Templates, ASGs, and Auto Scaling policies, ensuring unique names (e.g. `roboshop-dev-cart`, `roboshop-dev-catalogue`, `roboshop-dev-frontend`).
+
+### Bug 9: Ansible playbook bootstrap.sh Argument Typo
+*   **Problem:** Remote execution of `bootstrap.sh` completed with exit status 1:
+    ```text
+    Process exited with status 1
+    ```
+*   **Cause:** In the module's `remote-exec` block, the execution command was:
+    ```hcl
+    sudo /tmp/bootstrap.sh main ${var.component} ${var.environment}
+    ```
+    This passed `"main"` as the first argument (`$1`). Since `bootstrap.sh` parses `$1` as the component name and passes it directly to `ansible-playbook -e component=$component`, the playbook tried to configure a host/role called `"main"`, which does not exist.
+*   **Fix:** Updated the execution command to pass the component name directly as the first argument:
+    ```hcl
+    sudo /tmp/bootstrap.sh ${var.component}
+    ```
