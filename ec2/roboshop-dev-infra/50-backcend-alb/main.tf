@@ -8,11 +8,11 @@ resource "aws_lb" "backend-alb" {
   enable_deletion_protection = false
 
   tags = merge(
-        {
-            Name = "${var.project}-${var.environment}-backend-alb"
-        },
-        local.common_tags
- )
+    {
+      Name = "${var.project}-${var.environment}-backend-alb"
+    },
+    local.common_tags
+  )
 }
 
 resource "aws_lb_listener" "HTTP" {
@@ -20,18 +20,18 @@ resource "aws_lb_listener" "HTTP" {
   port              = 80
   protocol          = "HTTP"
   default_action {
-    type             = "fixed-response"
+    type = "fixed-response"
     fixed_response {
       content_type = "text/html"
       message_body = "<h1> Backend ALB is working fine</h1>"
-      status_code = "200"
+      status_code  = "200"
     }
   }
 }
 resource "aws_route53_record" "backend_alias" {
   zone_id = var.zone_id
-  name    = "*.backend-alb-${var.project}-${var.environment}.${var.domain_name}" # The DNS name you want to use
-  type    = "A"               # Use "A" for IPv4 or "AAAA" for IPv6
+  name    = "*.backend-alb-${var.environment}.${var.domain_name}" # The DNS name you want to use
+  type    = "A"                                                   # Use "A" for IPv4 or "AAAA" for IPv6
 
   alias {
     # Reference the ALB's DNS name and Hosted Zone ID
