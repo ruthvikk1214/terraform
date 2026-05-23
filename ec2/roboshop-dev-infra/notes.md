@@ -62,7 +62,73 @@ Despite the name, this folder actually provisions *both* the databases and the b
 
 ---
 
-## 6. Load Balancer Concepts
+## 6. `50-backcend-alb` (Backend Application Load Balancer)
+This folder provisions the internal Application Load Balancer (ALB) that manages backend application traffic inside the private subnets.
+
+*   **What it does:** It sets up a private, high-availability Application Load Balancer to route requests dynamically to various backend services.
+*   **Internal Scope (`internal = true`):** It is designated as an internal load balancer. It does not have public IP addresses and is only accessible from within the VPC network (e.g., from the Frontend or Bastion).
+*   **Placement:** It is deployed across the private subnets for multi-AZ high availability.
+*   **Security:** It associates the dedicated backend ALB security group (`local.backend_alb_sg_id`) to control who can send requests to it.
+*   **Listeners & Default Rules (`main.tf`):**
+    *   Creates an HTTP listener on port 80.
+    *   Configures a **fixed-response** default action returning a simple HTML message (`"<h1> Backend ALB is working fine</h1>"` with status `200`). This acts as a fallback/health verification. If a request is sent to the ALB that does not match any service-specific listener rules, the ALB safely returns this 200 OK response instead of timing out or throwing 5xx errors.
+*   **DNS & Alias Record Setup (`main.tf`):**
+    *   Creates a wildcard Route 53 `A` record alias (`*.backend-alb-dev.rk1214.in`) pointing directly to the ALB's DNS name.
+    *   This wildcard mapping allows all backend microservices (e.g., `catalogue`, `user`, `cart`, `shipping`, `payment`) to share the same ALB using host-based routing.
+*   **State Management & SSM Integration (`parameters.tf`):**
+    *   It exports the backend ALB HTTP Listener ARN to the AWS SSM Parameter Store (`/roboshop/dev/backend-alb_listener_arn`).
+    *   Subsequent application components (like `60-catalogue`) read this parameter to attach their respective target groups and listener rules to the ALB dynamically, keeping the ALB definition decoupled from individual service lifecycle configurations.
+
+---
+
+## 7. `60-catalogue` (Catalogue Component & AMI Baking Pattern)
+This folder provisions the EC2 instance for the `catalogue` backend service and bakes it into a custom Amazon Machine Image (AMI).
+
+*   **Subnet List vs. String Alignment:** 
+    *   To prevent type/index errors, `locals.tf` fetches the comma-separated private subnets as a clean list using:
+        ```terraform
+        private_subnet_ids = split(",", data.aws_ssm_parameter.private_subnet_ids.value)
+        ```
+    *   In `main.tf`, the first subnet is safely accessed using:
+        ```terraform
+        subnet_id = local.private_subnet_ids[0]
+        ```
+*   **Dynamic Data Sources (`data.tf`):** A dedicated data configuration resolves parameters dynamically, including the base `joindevops` AMI (`Redhat-9-DevOps-Practice`), `private_subnet_ids`, and the `catalogue_sg_id` from SSM Parameter Store.
+*   **Automated Bootstrap and Baking Lifecycle:**
+    1.  **Creation:** An EC2 instance `aws_instance.catalogue` is launched.
+    2.  **Configuration:** The `terraform_data.catalogue` resource triggers, copies `bootstrap.sh`, and runs Ansible locally on the instance to configure it fully as the catalogue service.
+    3.  **State Management (Stop):** The `aws_ec2_instance_state.catalogue` resource is defined to automatically change the instance state to `stopped` once the bootstrap process is successfully completed.
+    4.  **Baking:** The `aws_ami_from_instance.catalogue` resource takes the stopped, fully bootstrapped instance and bakes it into a custom AMI named `${var.project}-${var.environment}-catalogue`.
+    5.  **Benefit:** This pre-baked AMI can be used for zero-delay auto-scaling and immutable deployments, eliminating the need to run Ansible playbooks from scratch during scale-out events.
+*   **Scale-Up Policy & Warmup Timing (`estimated_instance_warmup`):**
+    *   In the Target Tracking Scaling Policy (`aws_autoscaling_policy.catalogue_scale_up`), we explicitly configure `estimated_instance_warmup = 120` (2 minutes).
+    *   **What it does:** It tells AWS Auto Scaling how long to wait after launching a new EC2 instance before including its CPU utilization/metrics in the CloudWatch average.
+    *   **Why it's critical**: It takes time for an EC2 instance to spin up, complete its initialization scripts, and load the Java app. If we didn't specify a warmup period, CloudWatch would see the newly launched instance as having 0% load initially, or it would still see high average CPU and trigger *even more* instances in rapid succession (scaling thrashing). A 120-second warmup gives the instance room to boot and take on traffic before another scaling action is evaluated.
+
+---
+
+## 8. `70-acm` (AWS Certificate Manager & Automated DNS Validation)
+This folder manages the SSL/TLS certificate layer to enable secure HTTPS communication for public and private subdomains.
+
+*   **What it does:** It requests, validates, and manages a public wildcard SSL/TLS certificate through AWS Certificate Manager (ACM) and Route 53 DNS.
+*   **Wildcard Certificate Request (`aws_acm_certificate.roboshop`):**
+    *   Provisions a wildcard certificate for `*.${var.domain_name}` (e.g., `*.rk1214.in`).
+    *   Uses `validation_method = "DNS"`. DNS validation is chosen over email validation because it is fully programmatic, does not require human intervention, and allows auto-renewal of certificates without further setup.
+*   **Automated DNS Challenge Validation (`aws_route53_record.roboshop`):**
+    *   AWS ACM requires DNS verification to prove ownership of the domain before issuing the certificate. ACM provides specific challenge records via the `domain_validation_options` attribute.
+    *   Terraform dynamically iterates over these domain validation records using a `for_each` loop.
+    *   It automatically creates corresponding validation CNAME records in the Route 53 hosted zone to complete the DNS challenge challenge cleanly.
+*   **Validation Gatekeeper (`aws_acm_certificate_validation.roboshop`):**
+    *   This resource represents the successful completion of the validation process.
+    *   It references the certificate's ARN and wait for the validation DNS records' FQDNs to resolve and propagate.
+    *   It acts as a blocking, synchronous gatekeeper in Terraform's dependency tree, guaranteeing that downstream resources (such as secure load balancers or CloudFront distributions) do not try to use the certificate before AWS ACM has officially verified and issued it.
+*   **Lifecycle Policy (`create_before_destroy = true`):**
+    *   Configures `create_before_destroy = true` inside the certificate's lifecycle block.
+    *   This is highly critical because an ACM certificate cannot be deleted or replaced while it is actively bound to an active resource (like an HTTPS listener). By instructing Terraform to create and validate the new certificate *before* attempting to delete the old one, we ensure zero-downtime certificate rotation.
+
+---
+
+## 9. Load Balancer Concepts
 
 ### How Does a Load Balancer Work?
 A Load Balancer acts as a "traffic cop" sitting in front of your servers and routing client requests across all servers capable of fulfilling those requests in a manner that maximizes speed and capacity utilization. 
@@ -181,8 +247,6 @@ To effectively utilize ALBs in your infrastructure, it's crucial to understand t
 
 ### AWS ALB Request Flow (Roboshop Host-Based Routing Example)
 
-Here is a visual and step-by-step representation of how a request flows through the AWS Application Load Balancer using Host-Based routing in the Roboshop environment.
-
 #### 1. Host-Based Routing Flow Diagram (Mermaid)
 
 ```mermaid
@@ -295,33 +359,7 @@ MongoDB (:27017)
 
 ---
 
-## 7. `60-catalogue` (Catalogue Component & AMI Baking Pattern)
-This folder provisions the EC2 instance for the `catalogue` backend service and bakes it into a custom Amazon Machine Image (AMI).
-
-*   **Subnet List vs. String Alignment:** 
-    *   To prevent type/index errors, `locals.tf` fetches the comma-separated private subnets as a clean list using:
-        ```terraform
-        private_subnet_ids = split(",", data.aws_ssm_parameter.private_subnet_ids.value)
-        ```
-    *   In `main.tf`, the first subnet is safely accessed using:
-        ```terraform
-        subnet_id = local.private_subnet_ids[0]
-        ```
-*   **Dynamic Data Sources (`data.tf`):** A dedicated data configuration resolves parameters dynamically, including the base `joindevops` AMI (`Redhat-9-DevOps-Practice`), `private_subnet_ids`, and the `catalogue_sg_id` from SSM Parameter Store.
-*   **Automated Bootstrap and Baking Lifecycle:**
-    1.  **Creation:** An EC2 instance `aws_instance.catalogue` is launched.
-    2.  **Configuration:** The `terraform_data.catalogue` resource triggers, copies `bootstrap.sh`, and runs Ansible locally on the instance to configure it fully as the catalogue service.
-    3.  **State Management (Stop):** The `aws_ec2_instance_state.catalogue` resource is defined to automatically change the instance state to `stopped` once the bootstrap process is successfully completed.
-    4.  **Baking:** The `aws_ami_from_instance.catalogue` resource takes the stopped, fully bootstrapped instance and bakes it into a custom AMI named `${var.project}-${var.environment}-catalogue`.
-    5.  **Benefit:** This pre-baked AMI can be used for zero-delay auto-scaling and immutable deployments, eliminating the need to run Ansible playbooks from scratch during scale-out events.
-*   **Scale-Up Policy & Warmup Timing (`estimated_instance_warmup`):**
-    *   In the Target Tracking Scaling Policy (`aws_autoscaling_policy.catalogue_scale_up`), we explicitly configure `estimated_instance_warmup = 120` (2 minutes).
-    *   **What it does:** It tells AWS Auto Scaling how long to wait after launching a new EC2 instance before including its CPU utilization/metrics in the CloudWatch average.
-    *   **Why it's critical**: It takes time for an EC2 instance to spin up, complete its initialization scripts, and load the Java app. If we didn't specify a warmup period, CloudWatch would see the newly launched instance as having 0% load initially, or it would still see high average CPU and trigger *even more* instances in rapid succession (scaling thrashing). A 120-second warmup gives the instance room to boot and take on traffic before another scaling action is evaluated.
-
----
-
-## 8. Terraform Git Management & Core Lifecycle Concepts
+## 10. Terraform Git Management & Core Lifecycle Concepts
 
 ### Why We Never Push the `.terraform` Directory
 The `.terraform` directory is a local working directory created by Terraform during initialization. **It must be added to `.gitignore` and never committed to Git** for several critical reasons:
@@ -356,12 +394,14 @@ When you run `terraform init`, Terraform generates or updates a `.terraform.lock
 
 ### Why Destroy Order Matters (Reverse Creation Order)
 When tearing down multi-layered AWS environments like Roboshop, **you must destroy the folders in the exact reverse order of their creation**:
-1. `60-catalogue` (Application code & Auto-scaling groups)
-2. `50-backend-alb` (Application load balancers)
-3. `30-bastion` (Jump hosts / Bastion compute)
-4. `20-sg-rules` (Security group ingress/egress rules)
-5. `10-sg` (Security groups)
-6. `00-vpc` (Virtual Private Cloud networks)
+1. `70-acm` (AWS Certificate Manager & Route53 Validation)
+2. `60-catalogue` (Catalogue Component & AMI Baking Pattern)
+3. `50-backcend-alb` (Backend Application load balancers)
+4. `40-databases` (Databases & Backend Applications)
+5. `30-bastion` (Jump hosts / Bastion compute)
+6. `20-sg-rules` (Security group ingress/egress rules)
+7. `10-sg` (Security groups)
+8. `00-vpc` (Virtual Private Cloud networks)
 
 **Why this is mandatory**:
 * **Dependency Locking**: A Security Group cannot be deleted if there is still a Security Group Rule that references it or a running instance associated with it.
