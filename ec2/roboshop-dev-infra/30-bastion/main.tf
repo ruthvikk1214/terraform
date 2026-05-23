@@ -28,6 +28,10 @@ resource "aws_iam_role_policy_attachment" "bastion_route53" {
   role       = aws_iam_role.bastion.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
 }
+resource "aws_iam_role_policy_attachment" "bastion_acm" {
+  role       = aws_iam_role.bastion.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSCertificateManagerFullAccess"
+}
 resource "aws_iam_role" "bastion" {
   name = "bastion"
 
