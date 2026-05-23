@@ -525,3 +525,16 @@ When tearing down multi-layered AWS environments like Roboshop, **you must destr
     ```hcl
     sudo /tmp/bootstrap.sh ${var.component}
     ```
+
+### Bug 10: Nginx Fails to Start with host not found in upstream (DNS Wildcard Mismatch)
+*   **Problem:** Nginx on the Frontend instance failed to start with a fatal error:
+    ```text
+    nginx: [emerg] host not found in upstream "catalogue.backend-alb-dev.rk1214.in" in /etc/nginx/nginx.conf:50
+    ```
+*   **Cause:** In `50-backcend-alb/main.tf`, the wildcard Route53 alias record was created with a project prefix: `*.backend-alb-${var.project}-${var.environment}.${var.domain_name}` (resolving to `*.backend-alb-roboshop-dev.rk1214.in`). However, the Nginx reverse-proxy configuration was looking for `catalogue.backend-alb-dev.rk1214.in` (without the `roboshop-` prefix). Because the domain was unresolvable, Nginx crashed on startup.
+*   **Fix:** Updated the wildcard DNS record name in `50-backcend-alb/main.tf` to `*.backend-alb-${var.environment}.${var.domain_name}`, aligning it perfectly with the Ansible playbooks.
+
+### Bug 11: Backend ALB Host Header Separation Mismatch (Dash vs Dot)
+*   **Problem:** The frontend could not route traffic to catalogue/cart microservices because of a host header mismatch.
+*   **Cause:** In the component module's `locals.tf`, the ALB listener host header condition was configured as `"${var.component}-backend-alb-${var.environment}.${var.domain_name}"` (using a **dash** separator: e.g. `catalogue-backend-alb-dev`). However, the frontend Nginx reverse-proxy sends traffic using `catalogue.backend-alb-dev` (using a **dot** separator).
+*   **Fix:** Changed the separator in the module's `locals.tf` `host_header` logic from a dash to a dot (`"${var.component}.backend-alb-${var.environment}.${var.domain_name}"`) to match the Nginx proxy headers.
