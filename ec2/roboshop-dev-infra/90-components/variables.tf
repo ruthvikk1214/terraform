@@ -10,10 +10,10 @@ variable "component" {
       rule_priority = 11
     },
     payment = {
-      rule_priority = 11
+      rule_priority = 12
     },
     user = {
-      rule_priority = 11
+      rule_priority = 13
     },
     frontend = {
       rule_priority = 5
