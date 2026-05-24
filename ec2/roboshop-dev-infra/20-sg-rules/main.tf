@@ -264,6 +264,7 @@ resource "aws_security_group_rule" "backend-alb_bastion" { #backend alb acceptin
   security_group_id        = local.backend_alb_sg_id
 }
 
+
 resource "aws_security_group_rule" "backend-alb_catalogue" { #backend alb accepting connections from catalogue to route requests
   type                     = "ingress"
   from_port                = 80
@@ -330,3 +331,35 @@ resource "aws_security_group_rule" "frontend_alb_internet" { #frontend alb accep
   security_group_id = local.frontend_alb_sg_id
 }
 
+# ==========================================
+# OPENVPN SECURITY GROUP
+# ==========================================
+
+resource "aws_security_group_rule" "openvpn_public_443" { #openvpn accepting connections from internet to serve requests
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = local.openvpn_sg_id
+}
+# ==========================================
+# OPENVPN ADMIN UI SECURITY GROUP
+# ==========================================
+resource "aws_security_group_rule" "openvpn_public_943" { #openvpn accepting connections from internet to serve requests
+  type              = "ingress"
+  from_port         = 943
+  to_port           = 943
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = local.openvpn_sg_id
+}
+
+resource "aws_security_group_rule" "openvpn_backend-alb_sg_id" { #openvpn accepting connections from backend alb
+  type                     = "ingress"
+  from_port                = 80
+  to_port                  = 80
+  protocol                 = "tcp"
+  source_security_group_id = local.openvpn_sg_id
+  security_group_id        = local.backend_alb_sg_id
+}
