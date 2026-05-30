@@ -4,6 +4,35 @@ This document provides an elaborated explanation of each folder and its role wit
 
 ---
 
+## How to Access RoboShop
+
+Depending on which stages of the infrastructure you have deployed, here is how you can access the environment:
+
+### A. Web Application (Public Access)
+*   **Via Frontend ALB Wildcard (Available right after `80-frontend-alb` & `90-components`):**
+    *   **URL:** [https://frontend.frontend-alb-roboshop-dev.rk1214.in](https://frontend.frontend-alb-roboshop-dev.rk1214.in)
+*   **Via CloudFront CDN (Available after applying `91-cdn`):**
+    *   **URL:** [https://roboshop-dev.rk1214.in](https://roboshop-dev.rk1214.in)
+    *   **Direct Frontend URL:** [https://frontend-dev.rk1214.in](https://frontend-dev.rk1214.in)
+
+### B. Internal Microservices (VPC Internal Backend ALB Routing)
+*   Wildcard route mapping is done via: `*.backend-alb-dev.rk1214.in`
+*   *Examples:*
+    *   **Catalogue:** `catalogue.backend-alb-dev.rk1214.in`
+    *   **User:** `user.backend-alb-dev.rk1214.in`
+    *   **Cart:** `cart.backend-alb-dev.rk1214.in`
+
+### C. VPN & Secure Internal Database Access
+*   **OpenVPN Web Portal:** `https://<VPN-Server-Public-IP>:943/`
+*   **Admin Credentials:**
+    *   **Username:** `openvpn`
+    *   **Password:** `Openvpn@123` (configured via `vpn.sh`)
+
+### D. Jump Server (Bastion Host)
+*   **Host Name:** `RoboShopDevBastion` (deployed in the public subnet; can be used to SSH into private instances).
+
+---
+
 ## 1. `00-vpc` (Virtual Private Cloud)
 This folder is the foundational layer. It sets up the underlying network where all other resources will be placed.
 
