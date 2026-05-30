@@ -1,0 +1,12 @@
+variable "environment" {
+  default = dev
+}
+variable "project" {
+  default = roboshop
+}
+variable "domain_name" {
+  default = "rk1214.in"
+}
+variable "zone_id" {
+  default = "Z031906510N5GWM6MW07L"
+}

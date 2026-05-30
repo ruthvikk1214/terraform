@@ -147,7 +147,36 @@ This folder provisions the public-facing Application Load Balancer (ALB) that ma
 
 ---
 
-## 10. Load Balancer Concepts
+## 10. `90-components` (Microservices Application Components)
+This folder provisions and configures the actual running microservices for the Roboshop application (Catalogue, Cart, User, Shipping, Payment, and Frontend) in an automated, dry-loop fashion.
+
+*   **What it does:** It loops over a map of components and configures each microservice using a dynamic module loop.
+*   **Reusable Module Integration:** It delegates resource creation to the `terraform-roboshop-component` Git module (`source = "git::https://github.com/ruthvikk1214/terraform-roboshop-component.git?ref=main"`).
+*   **Listener Rule Priorities:** In order to prevent traffic routing collisions on the ALB, it explicitly configures distinct priorities for each component:
+    *   `frontend`: rule priority `105`
+    *   `catalogue`: rule priority `110`
+    *   `cart`: rule priority `111` (updated to move away from potential slot conflicts)
+    *   `payment`: rule priority `112`
+    *   `user`: rule priority `113`
+    *   `shipping`: rule priority `114`
+
+---
+
+## 11. `91-cdn` (CloudFront Content Delivery Network)
+This folder configures the edge caching layer to accelerate frontend delivery and secure user access.
+
+*   **What it does:** It sets up an Amazon CloudFront CDN distribution in front of the Frontend Load Balancer.
+*   **Origins & Viewer Policy:** Points directly to the HTTPS Frontend ALB endpoint, enforcing `https-only` with `TLSv1.2` or `TLSv1.1`.
+*   **SSL/TLS Certificate:** Binds the ACM SSL/TLS wildcard certificate to secure HTTPS delivery at the edge for custom domain aliases like `${var.project}-${var.environment}.${var.domain_name}` (e.g. `roboshop-dev.rk1214.in`).
+*   **Caching Strategy:**
+    *   **Dynamic / Default Cache:** Configured with `cachingDisabled` to prevent caching dynamic APIs or state-dependent responses.
+    *   **Static Assets Cache:** Ordered behaviors for paths `/media/*` and `/images/*` are configured with `cachingOptimized` to cache static content at CloudFront edge locations, maximizing performance and reducing load on frontend EC2 instances.
+*   **DNS Integration:** Creates a Route 53 `A` record alias mapping the user-facing domain (e.g., `roboshop-dev.rk1214.in`) directly to the CloudFront distribution.
+
+---
+
+## 12. Load Balancer Concepts
+
 
 ### How Does a Load Balancer Work?
 A Load Balancer acts as a "traffic cop" sitting in front of your servers and routing client requests across all servers capable of fulfilling those requests in a manner that maximizes speed and capacity utilization. 
@@ -378,7 +407,7 @@ MongoDB (:27017)
 
 ---
 
-## 11. Terraform Git Management & Core Lifecycle Concepts
+## 13. Terraform Git Management & Core Lifecycle Concepts
 
 ### Why We Never Push the `.terraform` Directory
 The `.terraform` directory is a local working directory created by Terraform during initialization. **It must be added to `.gitignore` and never committed to Git** for several critical reasons:
@@ -429,7 +458,7 @@ When tearing down multi-layered AWS environments like Roboshop, **you must destr
 
 ---
 
-## 12. Troubleshooting & Lessons Learned (May 2026)
+## 14. Troubleshooting & Lessons Learned (May 2026)
 
 ### Bug 1: SSM Parameter Resource Not Found (`70-acm` vs `80-frontend-alb` Dependency)
 *   **Problem:** Attempting to apply `80-frontend-alb` failed with the error:
